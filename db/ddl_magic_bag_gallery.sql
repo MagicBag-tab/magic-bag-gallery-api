@@ -151,3 +151,25 @@ CREATE TABLE IF NOT EXISTS envio (
     estado_envio VARCHAR(50) NOT NULL,
     FOREIGN KEY (id_venta) REFERENCES venta(id_venta)
 );
+
+-- Indices --
+
+-- Búsqueda por correo
+CREATE INDEX idx_usuario_correo
+    ON usuario(correo_electronico);
+
+-- Filtrar pinturas por artista
+CREATE INDEX idx_pintura_artista
+    ON pintura(id_artista);
+
+-- Historial de ventas por cliente
+CREATE INDEX idx_venta_cliente
+    ON venta(id_cliente);
+
+-- Consultas de envíos por venta
+CREATE INDEX idx_envio_venta
+    ON envio(id_venta);
+
+-- Filtrar pinturas por colección
+CREATE INDEX idx_pintura_coleccion
+    ON pintura(id_coleccion);
