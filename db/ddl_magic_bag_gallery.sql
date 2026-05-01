@@ -48,8 +48,7 @@ CREATE TABLE IF NOT EXISTS direccion (
 -- Artista --
 CREATE TABLE IF NOT EXISTS artista (
     id_artista SERIAL UNIQUE NOT NULL PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL,
-    apellido VARCHAR(100) NOT NULL,
+    nombre_completo VARCHAR(100) NOT NULL,
     nacionalidad VARCHAR(50) NOT NULL,
     id_reclutador INT NOT NULL,
     FOREIGN KEY (id_reclutador) REFERENCES empleado(id_empleado)

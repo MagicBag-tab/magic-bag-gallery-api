@@ -1,6 +1,6 @@
 -- ============================================
 -- DML - MAGIC BAG GALLERY
--- Datos de prueba
+-- Datos de prueba realistas con artistas modernos
 -- ============================================
 
 -- ============================================
@@ -17,13 +17,11 @@ INSERT INTO usuario (nombre, apellido, correo_electronico, telefono, contrasena)
 ('Fernando',  'Castillo Reyes',   'fernando.castillo@gmail.com','50255589012', '$2b$12$abc123hashcliente8'),
 ('Isabella',  'Flores Alvarado',  'isabella.flores@gmail.com',  '50255590123', '$2b$12$abc123hashcliente9'),
 ('Sebastián', 'Vásquez Molina',   'sebastian.vasquez@gmail.com','50255501234', '$2b$12$abc123hashcliente10'),
--- Empleados
 ('Ana',       'Solís Gramajo',    'ana.solis@magicbag.gt',      '50244411111', '$2b$12$abc123hashempleado1'),
 ('Roberto',   'Lima Barrios',     'roberto.lima@magicbag.gt',   '50244422222', '$2b$12$abc123hashempleado2'),
 ('Patricia',  'Aguilar Choc',     'patricia.aguilar@magicbag.gt','50244433333','$2b$12$abc123hashempleado3'),
 ('Miguel',    'Ramos Tzul',       'miguel.ramos@magicbag.gt',   '50244444444', '$2b$12$abc123hashempleado4'),
 ('Carmen',    'Cifuentes Pop',    'carmen.cifuentes@magicbag.gt','50244455555','$2b$12$abc123hashempleado5'),
--- Clientes extra
 ('Jorge',     'Bolaños Méndez',   'jorge.bolanos@gmail.com',    '50255511111', '$2b$12$abc123hashcliente11'),
 ('Daniela',   'Monterroso Pac',   'daniela.monterroso@gmail.com','50255522222','$2b$12$abc123hashcliente12'),
 ('Ricardo',   'Orellana Sajché',  'ricardo.orellana@gmail.com', '50255533333', '$2b$12$abc123hashcliente13'),
@@ -31,7 +29,7 @@ INSERT INTO usuario (nombre, apellido, correo_electronico, telefono, contrasena)
 ('Pablo',     'Xicay Cúmez',      'pablo.xicay@gmail.com',      '50255555555', '$2b$12$abc123hashcliente15');
 
 -- ============================================
--- CLIENTES (id_usuario 1–10, 16–20)
+-- CLIENTES
 -- ============================================
 INSERT INTO cliente (id_usuario, tipo_cliente) VALUES
 (1,  'vip'),
@@ -51,7 +49,7 @@ INSERT INTO cliente (id_usuario, tipo_cliente) VALUES
 (20, 'vip');
 
 -- ============================================
--- EMPLEADOS (id_usuario 11–15)
+-- EMPLEADOS
 -- ============================================
 INSERT INTO empleado (id_usuario, tipo_empleado) VALUES
 (11, 'guia'),
@@ -64,133 +62,143 @@ INSERT INTO empleado (id_usuario, tipo_empleado) VALUES
 -- DIRECCIONES
 -- ============================================
 INSERT INTO direccion (id_cliente, detalle, nombre, ciudad, estado, codigo_postal, pais) VALUES
-(1,  'Zona 10, Calle Reforma 12-34', 'Casa principal',      'Ciudad de Guatemala', 'Guatemala',     '01010', 'Guatemala'),
-(1,  'Av. Brickell 1234, Apt 5B',    'Residencia Miami',    'Miami',               'Florida',        '33131', 'Estados Unidos'),
-(2,  'Zona 14, Av. Las Américas 5-6','Casa',                'Ciudad de Guatemala', 'Guatemala',     '01014', 'Guatemala'),
-(3,  'Zona 15, Vista Hermosa 3-45',  'Casa principal',      'Ciudad de Guatemala', 'Guatemala',     '01015', 'Guatemala'),
-(3,  'Calle Serrano 45, Piso 3',     'Apartamento Madrid',  'Madrid',              'Comunidad de Madrid','28001','España'),
-(4,  'Zona 1, 6ta Av 7-89',         'Casa',                'Ciudad de Guatemala', 'Guatemala',     '01001', 'Guatemala'),
-(5,  'Zona 16, Cayalá Torre A',     'Apartamento',         'Ciudad de Guatemala', 'Guatemala',     '01016', 'Guatemala'),
-(6,  'Antigua Guatemala, 3ra Calle', 'Casa colonial',       'Antigua Guatemala',   'Sacatepéquez',  '03001', 'Guatemala'),
-(7,  'Zona 10, Blvd Los Próceres',  'Casa',                'Ciudad de Guatemala', 'Guatemala',     '01010', 'Guatemala'),
-(7,  'Via Condotti 12, Int 4',      'Apartamento Roma',    'Roma',                'Lazio',          '00187', 'Italia'),
-(8,  'Zona 11, Mariscal 23-45',     'Casa',                'Ciudad de Guatemala', 'Guatemala',     '01011', 'Guatemala'),
-(9,  'Zona 10, Oakland Mall área',  'Penthouse',           'Ciudad de Guatemala', 'Guatemala',     '01010', 'Guatemala'),
-(10, 'Xela, Zona 1, 5ta Calle',     'Casa',                'Quetzaltenango',      'Quetzaltenango','09001', 'Guatemala'),
-(11, 'Zona 12, Colonia La Florida', 'Casa',                'Ciudad de Guatemala', 'Guatemala',     '01012', 'Guatemala'),
-(12, 'Zona 7, Tikal 2 Sector B',    'Casa',                'Ciudad de Guatemala', 'Guatemala',     '01007', 'Guatemala');
+(1,  'Zona 10, Calle Reforma 12-34',  'Casa principal',     'Ciudad de Guatemala', 'Guatemala',          '01010', 'Guatemala'),
+(1,  'Av. Brickell 1234, Apt 5B',     'Residencia Miami',   'Miami',               'Florida',            '33131', 'Estados Unidos'),
+(2,  'Zona 14, Av. Las Américas 5-6', 'Casa',               'Ciudad de Guatemala', 'Guatemala',          '01014', 'Guatemala'),
+(3,  'Zona 15, Vista Hermosa 3-45',   'Casa principal',     'Ciudad de Guatemala', 'Guatemala',          '01015', 'Guatemala'),
+(3,  'Calle Serrano 45, Piso 3',      'Apartamento Madrid', 'Madrid',              'Comunidad de Madrid','28001', 'España'),
+(4,  'Zona 1, 6ta Av 7-89',          'Casa',               'Ciudad de Guatemala', 'Guatemala',          '01001', 'Guatemala'),
+(5,  'Zona 16, Cayalá Torre A',       'Apartamento',        'Ciudad de Guatemala', 'Guatemala',          '01016', 'Guatemala'),
+(6,  'Antigua Guatemala, 3ra Calle',  'Casa colonial',      'Antigua Guatemala',   'Sacatepéquez',       '03001', 'Guatemala'),
+(7,  'Zona 10, Blvd Los Próceres',   'Casa',               'Ciudad de Guatemala', 'Guatemala',          '01010', 'Guatemala'),
+(7,  'Via Condotti 12, Int 4',        'Apartamento Roma',   'Roma',                'Lazio',              '00187', 'Italia'),
+(8,  'Zona 11, Mariscal 23-45',       'Casa',               'Ciudad de Guatemala', 'Guatemala',          '01011', 'Guatemala'),
+(9,  'Zona 10, Oakland Mall área',    'Penthouse',          'Ciudad de Guatemala', 'Guatemala',          '01010', 'Guatemala'),
+(10, 'Xela, Zona 1, 5ta Calle',       'Casa',               'Quetzaltenango',      'Quetzaltenango',     '09001', 'Guatemala'),
+(11, 'Zona 12, Colonia La Florida',   'Casa',               'Ciudad de Guatemala', 'Guatemala',          '01012', 'Guatemala'),
+(12, 'Zona 7, Tikal 2 Sector B',      'Casa',               'Ciudad de Guatemala', 'Guatemala',          '01007', 'Guatemala');
 
 -- ============================================
--- ARTISTAS
+-- ARTISTAS (nombre completo en un solo campo)
 -- ============================================
-INSERT INTO artista (nombre, apellido, nacionalidad, id_reclutador) VALUES
-('Diego',    'Rivera Barrientos',  'Mexicana',     3),
-('Frida',    'Xicay Ajú',          'Guatemalteca', 3),
-('Remedios', 'Varo Cifuentes',     'Española',     3),
-('Joaquín',  'Torres García',      'Uruguaya',     3),
-('Rufino',   'Tamayo Pop',         'Mexicana',     3),
-('Carlos',   'Mérida Ajquijay',    'Guatemalteca', 3),
-('Rosa',     'Cabrera Tzul',       'Guatemalteca', 3),
-('Luis',     'González Morales',   'Guatemalteca', 3),
-('Elena',    'Quispe Mamani',      'Peruana',      3),
-('Mateo',    'Rodríguez Sajché',   'Colombiana',   3);
+INSERT INTO artista (nombre, nacionalidad, id_reclutador) VALUES
+('Jean-Michel Basquiat', 'Estadounidense', 3),
+('Banksy',               'Británica',      3),
+('Yayoi Kusama',         'Japonesa',       3),
+('Jeff Koons',           'Estadounidense', 3),
+('Damien Hirst',         'Británica',      3),
+('Takashi Murakami',     'Japonesa',       3),
+('KAWS',                 'Estadounidense', 3),
+('Shepard Fairey',       'Estadounidense', 3),
+('Kerry James Marshall', 'Estadounidense', 3),
+('Kehinde Wiley',        'Estadounidense', 3);
 
 -- ============================================
 -- COLECCIONES
 -- ============================================
 INSERT INTO coleccion (nombre, descripcion, exclusiva, fecha_lanzamiento) VALUES
-('Raíces Mayas',         'Colección que celebra la herencia maya guatemalteca con técnicas contemporáneas.',     TRUE,  '2024-01-15'),
-('Paisajes del Altiplano','Obras que capturan la majestuosidad de los paisajes guatemaltecos.',                   FALSE, '2024-03-01'),
-('Arte Abstracto GT',    'Exploración del arte abstracto por artistas guatemaltecos emergentes.',                 FALSE, '2024-05-10'),
-('Mujeres de Colores',   'Colección exclusiva dedicada a retratos de mujeres indígenas guatemaltecas.',          TRUE,  '2024-07-20'),
-('Naturaleza Viva',      'Pinturas de flora y fauna de Guatemala en técnicas mixtas.',                            FALSE, '2024-09-05');
+('Neo-Expresionismo',  'Obras clave del movimiento neo-expresionista de finales del siglo XX.',           TRUE,  '2024-01-15'),
+('Arte Callejero',     'Street art y arte urbano de los artistas más influyentes del mundo.',             FALSE, '2024-03-01'),
+('Arte Contemporáneo', 'Selección de obras del arte contemporáneo global más cotizado.',                  FALSE, '2024-05-10'),
+('Pop Art Moderno',    'Colección exclusiva que fusiona el pop art clásico con tendencias actuales.',     TRUE,  '2024-07-20'),
+('Identidad y Cultura','Obras que exploran la identidad racial, cultural y social en el arte moderno.',   FALSE, '2024-09-05');
 
 -- ============================================
 -- TÉCNICAS
 -- ============================================
 INSERT INTO tecnica (nombre, descripcion) VALUES
-('Óleo sobre lienzo',    'Técnica tradicional usando pigmentos mezclados con aceite sobre lienzo de algodón.'),
-('Acuarela',             'Pintura transparente a base de agua, ideal para paisajes y naturaleza.'),
-('Acrílico',             'Pintura de secado rápido a base de polímeros, versátil y duradera.'),
-('Técnica mixta',        'Combinación de múltiples medios y materiales en una sola obra.'),
-('Encáustica',           'Técnica antigua que usa cera de abeja mezclada con pigmentos de colores.'),
-('Gouache',              'Similar a la acuarela pero opaca, con mayor cuerpo y luminosidad.'),
-('Pastel',               'Barras de pigmento puro comprimido, permite texturas suaves y difuminados.');
+('Óleo sobre lienzo', 'Técnica tradicional usando pigmentos mezclados con aceite sobre lienzo de algodón.'),
+('Acuarela',          'Pintura transparente a base de agua, ideal para paisajes y naturaleza.'),
+('Acrílico',          'Pintura de secado rápido a base de polímeros, versátil y duradera.'),
+('Técnica mixta',     'Combinación de múltiples medios y materiales en una sola obra.'),
+('Serigrafía',        'Técnica de impresión que usa una malla para transferir tinta sobre la superficie.'),
+('Spray sobre muro',  'Pintura en aerosol aplicada sobre superficies urbanas, característica del street art.'),
+('Instalación',       'Obra artística tridimensional que transforma un espacio completo.');
 
 -- ============================================
 -- PINTURAS
 -- ============================================
 INSERT INTO pintura (id_artista, titulo, descripcion, precio, fecha_creacion, imagen_path, imagen_tipo, imagen_nombre, exclusiva, id_coleccion) VALUES
-(1, 'Quetzal Dorado',         'Representación del quetzal nacional en tonos dorados y verdes.',         15000.00, '2023-06-01', '/uploads/pinturas/quetzal_dorado.jpg',        'image/jpeg', 'quetzal_dorado.jpg',        TRUE,  1),
-(2, 'Mercado de Chichicastenango','Escena vibrante del mercado indígena más famoso de Guatemala.',      8500.00,  '2023-08-15', '/uploads/pinturas/mercado_chichi.jpg',         'image/jpeg', 'mercado_chichi.jpg',         FALSE, 2),
-(3, 'Volcán de Agua',         'Vista majestuosa del Volcán de Agua desde Antigua Guatemala.',           12000.00, '2023-09-20', '/uploads/pinturas/volcan_agua.jpg',           'image/jpeg', 'volcan_agua.jpg',           FALSE, 2),
-(4, 'Tejedoras de Sololá',    'Mujeres indígenas tejiendo trajes típicos en el altiplano.',             18000.00, '2023-10-05', '/uploads/pinturas/tejedoras_solola.jpg',       'image/jpeg', 'tejedoras_solola.jpg',       TRUE,  4),
-(5, 'Lago Atitlán al Amanecer','Amanecer sobre el Lago Atitlán con los tres volcanes de fondo.',        9500.00,  '2023-11-12', '/uploads/pinturas/atitlan_amanecer.jpg',       'image/jpeg', 'atitlan_amanecer.jpg',       FALSE, 2),
-(6, 'Geometría Maya',         'Patrones geométricos mayas reinterpretados en arte contemporáneo.',      22000.00, '2023-12-01', '/uploads/pinturas/geometria_maya.jpg',        'image/jpeg', 'geometria_maya.jpg',        TRUE,  1),
-(7, 'Flores de Guatemala',    'Composición floral con orquídeas y flores tropicales guatemaltecas.',    6000.00,  '2024-01-10', '/uploads/pinturas/flores_guatemala.jpg',       'image/jpeg', 'flores_guatemala.jpg',       FALSE, 5),
-(8, 'Abstracción Urbana',     'Interpretación abstracta de la ciudad de Guatemala moderna.',            11000.00, '2024-02-20', '/uploads/pinturas/abstraccion_urbana.jpg',     'image/jpeg', 'abstraccion_urbana.jpg',     FALSE, 3),
-(9, 'Danza del Venado',       'Representación de la danza folklórica guatemalteca del venado.',         14000.00, '2024-03-15', '/uploads/pinturas/danza_venado.jpg',          'image/jpeg', 'danza_venado.jpg',          TRUE,  1),
-(10,'Semana Santa Antigua',   'Procesión de Semana Santa en las calles de Antigua Guatemala.',          7500.00,  '2024-04-01', '/uploads/pinturas/semana_santa.jpg',          'image/jpeg', 'semana_santa.jpg',          FALSE, NULL),
-(1, 'Cacao Sagrado',          'El cacao como elemento sagrado en la cultura maya prehispánica.',        19000.00, '2024-04-20', '/uploads/pinturas/cacao_sagrado.jpg',         'image/jpeg', 'cacao_sagrado.jpg',         TRUE,  1),
-(2, 'Niña de Todos Santos',   'Retrato de niña con traje típico de Todos Santos Cuchumatán.',           13000.00, '2024-05-05', '/uploads/pinturas/nina_todos_santos.jpg',      'image/jpeg', 'nina_todos_santos.jpg',      TRUE,  4),
-(3, 'Ceiba Sagrada',          'La ceiba, árbol nacional de Guatemala, en técnica mixta.',               8000.00,  '2024-05-25', '/uploads/pinturas/ceiba_sagrada.jpg',         'image/jpeg', 'ceiba_sagrada.jpg',         FALSE, 5),
-(4, 'Huipil de Nebaj',        'Detalle de los intrincados bordados del huipil de Nebaj.',               16000.00, '2024-06-10', '/uploads/pinturas/huipil_nebaj.jpg',          'image/jpeg', 'huipil_nebaj.jpg',          TRUE,  4),
-(5, 'Río Motagua',            'Paisaje del río Motagua con vegetación tropical.',                       5500.00,  '2024-06-30', '/uploads/pinturas/rio_motagua.jpg',           'image/jpeg', 'rio_motagua.jpg',           FALSE, 5),
-(6, 'Códice Contemporáneo',   'Reinterpretación de los códices mayas en formato contemporáneo.',        25000.00, '2024-07-15', '/uploads/pinturas/codice_contemporaneo.jpg',  'image/jpeg', 'codice_contemporaneo.jpg',  TRUE,  1),
-(7, 'Orquídea Morada',        'Monja blanca, flor nacional de Guatemala, en acuarela.',                 4500.00,  '2024-07-30', '/uploads/pinturas/orquidea_morada.jpg',       'image/jpeg', 'orquidea_morada.jpg',       FALSE, 5),
-(8, 'Ciudad Fragmentada',     'Visión abstracta de la fragmentación urbana en Guatemala.',              10000.00, '2024-08-10', '/uploads/pinturas/ciudad_fragmentada.jpg',    'image/jpeg', 'ciudad_fragmentada.jpg',    FALSE, 3),
-(9, 'Marimba',                'La marimba, instrumento nacional, representada en colores vibrantes.',   9000.00,  '2024-08-25', '/uploads/pinturas/marimba.jpg',               'image/jpeg', 'marimba.jpg',               FALSE, NULL),
-(10,'Xelajú Eterno',          'Panorámica de Quetzaltenango desde el cerro El Baúl.',                  7000.00,  '2024-09-05', '/uploads/pinturas/xelaju_eterno.jpg',         'image/jpeg', 'xelaju_eterno.jpg',         FALSE, 2),
-(1, 'Popol Vuh',              'Escenas del libro sagrado maya quiché en técnica encáustica.',           30000.00, '2024-09-20', '/uploads/pinturas/popol_vuh.jpg',             'image/jpeg', 'popol_vuh.jpg',             TRUE,  1),
-(2, 'Abuela Tejedora',        'Retrato íntimo de anciana indígena tejiendo en telar de cintura.',       17000.00, '2024-10-01', '/uploads/pinturas/abuela_tejedora.jpg',       'image/jpeg', 'abuela_tejedora.jpg',       TRUE,  4),
-(3, 'Selva Petén',            'Densa selva del Petén con fauna autóctona guatemalteca.',                8500.00,  '2024-10-15', '/uploads/pinturas/selva_peten.jpg',           'image/jpeg', 'selva_peten.jpg',           FALSE, 5),
-(4, 'Espíritu del Maíz',      'El maíz como elemento central de la cosmovisión maya.',                  20000.00, '2024-10-30', '/uploads/pinturas/espiritu_maiz.jpg',         'image/jpeg', 'espiritu_maiz.jpg',         TRUE,  1),
-(5, 'Tikal al Atardecer',     'Templo I de Tikal emergiendo de la selva en el atardecer.',              11500.00, '2024-11-10', '/uploads/pinturas/tikal_atardecer.jpg',       'image/jpeg', 'tikal_atardecer.jpg',       FALSE, 2);
+(1, 'Untitled (Skull)',                       'Icónico cráneo neo-expresionista de Basquiat, símbolo de su obra.',                    95000.00, '1981-01-01', '/uploads/pinturas/basquiat_skull.jpg',           'image/jpeg', 'basquiat_skull.jpg',           TRUE,  1),
+(1, 'Hollywood Africans',                     'Crítica social sobre la representación de los afroamericanos en Hollywood.',            78000.00, '1983-01-01', '/uploads/pinturas/basquiat_hollywood.jpg',       'image/jpeg', 'basquiat_hollywood.jpg',       TRUE,  1),
+(1, 'Warrior',                                'Figura guerrera que mezcla iconografía africana con el grafiti urbano.',                65000.00, '1982-01-01', '/uploads/pinturas/basquiat_warrior.jpg',         'image/jpeg', 'basquiat_warrior.jpg',         FALSE, 1),
+(2, 'Girl with Balloon',                      'La icónica niña con globo rojo, símbolo de esperanza e inocencia.',                    88000.00, '2002-01-01', '/uploads/pinturas/banksy_balloon_girl.jpg',       'image/jpeg', 'banksy_balloon_girl.jpg',       FALSE, 2),
+(2, 'Flower Thrower',                         'Manifestante lanzando un ramo de flores en lugar de una bomba.',                       72000.00, '2003-01-01', '/uploads/pinturas/banksy_flower_thrower.jpg',     'image/jpeg', 'banksy_flower_thrower.jpg',     FALSE, 2),
+(2, 'Napalm',                                 'Mickey Mouse y Ronald McDonald tomando de la mano a la niña de napalm.',               55000.00, '2004-01-01', '/uploads/pinturas/banksy_napalm.jpg',             'image/jpeg', 'banksy_napalm.jpg',             TRUE,  2),
+(3, 'Infinity Nets',                          'Patrón infinito de redes que cubre todo el lienzo, obra obsesiva de Kusama.',          90000.00, '1958-01-01', '/uploads/pinturas/kusama_infinity_nets.jpg',      'image/jpeg', 'kusama_infinity_nets.jpg',      TRUE,  3),
+(3, 'Pumpkin Yellow',                         'La icónica calabaza amarilla con puntos negros de Kusama.',                            68000.00, '1994-01-01', '/uploads/pinturas/kusama_pumpkin.jpg',            'image/jpeg', 'kusama_pumpkin.jpg',            FALSE, 3),
+(3, 'Flowers that Bloom at Midnight',         'Flores oníricas en colores vibrantes características del estilo de Kusama.',           45000.00, '2012-01-01', '/uploads/pinturas/kusama_midnight_flowers.jpg',   'image/jpeg', 'kusama_midnight_flowers.jpg',   FALSE, 3),
+(4, 'Balloon Dog Blue',                       'El famoso perro globo azul de Jeff Koons en su versión pictórica.',                   120000.00, '1994-01-01', '/uploads/pinturas/koons_balloon_dog.jpg',         'image/jpeg', 'koons_balloon_dog.jpg',         TRUE,  4),
+(4, 'Michael Jackson and Bubbles',            'Retrato del icónico artista pop con su chimpancé en estilo porcelana.',                85000.00, '1988-01-01', '/uploads/pinturas/koons_michael_jackson.jpg',     'image/jpeg', 'koons_michael_jackson.jpg',     TRUE,  4),
+(5, 'The Physical Impossibility of Death',    'Representación del tiburón en formol, obra más icónica de Hirst.',                    99000.00, '1991-01-01', '/uploads/pinturas/hirst_shark.jpg',               'image/jpeg', 'hirst_shark.jpg',               TRUE,  3),
+(5, 'Beautiful Inside My Head Forever',       'Pintura de manchas de colores vibrantes sobre lienzo circular.',                       42000.00, '2008-01-01', '/uploads/pinturas/hirst_spin_painting.jpg',       'image/jpeg', 'hirst_spin_painting.jpg',       FALSE, 3),
+(6, 'Superflat Monogram',                     'Fusión de la cultura pop japonesa con el arte contemporáneo occidental.',              75000.00, '2003-01-01', '/uploads/pinturas/murakami_superflat.jpg',        'image/jpeg', 'murakami_superflat.jpg',        FALSE, 4),
+(6, 'My Lonesome Cowboy',                     'Figura anime en estilo neo-pop que mezcla manga con arte contemporáneo.',              82000.00, '1998-01-01', '/uploads/pinturas/murakami_cowboy.jpg',           'image/jpeg', 'murakami_cowboy.jpg',           TRUE,  4),
+(6, 'In the Land of the Dead',                'Escena colorida inspirada en el folclore japonés y la cultura otaku.',                 58000.00, '2014-01-01', '/uploads/pinturas/murakami_land_dead.jpg',        'image/jpeg', 'murakami_land_dead.jpg',        FALSE, 4),
+(7, 'COMPANION Passing Through',              'El icónico personaje COMPANION con ojos en X en pose reflexiva.',                     67000.00, '2013-01-01', '/uploads/pinturas/kaws_companion.jpg',            'image/jpeg', 'kaws_companion.jpg',            FALSE, 4),
+(7, 'SHARE',                                  'Obra de KAWS explorando la conexión humana a través de sus personajes.',               54000.00, '2020-01-01', '/uploads/pinturas/kaws_share.jpg',                'image/jpeg', 'kaws_share.jpg',                FALSE, 3),
+(8, 'Obama Hope Poster',                      'El famoso retrato en rojo, blanco y azul de Barack Obama.',                           38000.00, '2008-01-01', '/uploads/pinturas/fairey_obama_hope.jpg',         'image/jpeg', 'fairey_obama_hope.jpg',         FALSE, 2),
+(8, 'Andre the Giant Has a Posse',            'El icónico sticker OBEY que marcó el inicio del arte callejero moderno.',             32000.00, '1989-01-01', '/uploads/pinturas/fairey_obey.jpg',               'image/jpeg', 'fairey_obey.jpg',               FALSE, 2),
+(9, 'Past Times',                             'Escena de la vida afroamericana en un parque suburbano americano.',                   88000.00, '1997-01-01', '/uploads/pinturas/marshall_past_times.jpg',       'image/jpeg', 'marshall_past_times.jpg',       TRUE,  5),
+(9, 'School of Beauty School of Culture',     'Salón de belleza afroamericano como espacio de identidad y cultura.',                 76000.00, '2012-01-01', '/uploads/pinturas/marshall_beauty_school.jpg',    'image/jpeg', 'marshall_beauty_school.jpg',    TRUE,  5),
+(10,'Napoleon Leading the Army over the Alps','Reinterpretación del clásico napoleónico con un joven afroamericano.',                92000.00, '2005-01-01', '/uploads/pinturas/wiley_napoleon.jpg',            'image/jpeg', 'wiley_napoleon.jpg',            TRUE,  5),
+(10,'Saint Jerome Hearing the Trumpet',       'Figura afroamericana en pose clásica de San Jerónimo.',                              71000.00, '2017-01-01', '/uploads/pinturas/wiley_saint_jerome.jpg',        'image/jpeg', 'wiley_saint_jerome.jpg',        TRUE,  5),
+(10,'Equestrian Portrait of King Philip II',  'Reinterpretación del retrato ecuestre clásico con protagonista moderno.',             63000.00, '2006-01-01', '/uploads/pinturas/wiley_equestrian.jpg',          'image/jpeg', 'wiley_equestrian.jpg',          FALSE, 5);
 
 -- ============================================
 -- PINTURA_TECNICA
 -- ============================================
 INSERT INTO pintura_tecnica (id_pintura, id_tecnica) VALUES
-(1,  1), (1,  3),
-(2,  1),
-(3,  2),
-(4,  1), (4,  4),
-(5,  2),
-(6,  3), (6,  4),
-(7,  2),
-(8,  3), (8,  4),
-(9,  1),
-(10, 1),
-(11, 5),
-(12, 1),
-(13, 4),
-(14, 1), (14, 6),
-(15, 2),
-(16, 4), (16, 5),
-(17, 2),
+(1,  4), 
+(1,  1),
+(2,  4),
+(3,  4), 
+(3,  3),
+(4,  6),
+(5,  6),
+(6,  6), 
+(6,  4),
+(7,  1),
+(8,  3),
+(9,  3),
+(10, 3),
+(11, 3), 
+(11, 4),
+(12, 4),
+(13, 3),
+(14, 3), 
+(14, 5),
+(15, 3),
+(16, 3), 
+(16, 4),
+(17, 3), 
+(17, 4),
 (18, 3),
-(19, 3),
-(20, 1),
-(21, 5),
+(19, 5), 
+(19, 6),
+(20, 5), 
+(20, 6),
+(21, 1), 
+(21, 3),
 (22, 1),
-(23, 2), (23, 4),
-(24, 1), (24, 3),
+(23, 1),
+(24, 1),
 (25, 1);
 
 -- ============================================
 -- TOURS
 -- ============================================
 INSERT INTO tour (id_guia, nombre, descripcion, fecha_inicio, fecha_fin, horario, precio) VALUES
-(1, 'Arte Maya Contemporáneo',  'Recorrido por las obras de arte inspiradas en la cultura maya.',         '2025-01-10', '2025-01-10', '10:00 - 12:00', 150.00),
-(4, 'Técnicas Tradicionales',   'Visita guiada enfocada en técnicas de pintura tradicionales.',           '2025-01-17', '2025-01-17', '14:00 - 16:00', 120.00),
-(1, 'Colecciones Exclusivas',   'Tour privado por las colecciones exclusivas de la galería.',             '2025-02-07', '2025-02-07', '09:00 - 11:00', 300.00),
-(4, 'Paisajes Guatemaltecos',   'Recorrido temático por pinturas de paisajes nacionales.',                '2025-02-14', '2025-02-14', '15:00 - 17:00', 100.00),
-(1, 'Artistas Emergentes GT',   'Presentación de los artistas guatemaltecos más prometedores.',           '2025-03-07', '2025-03-07', '11:00 - 13:00', 130.00),
-(4, 'Noche de Arte',            'Tour nocturno especial con cóctel de bienvenida incluido.',              '2025-03-21', '2025-03-21', '19:00 - 21:00', 250.00),
-(1, 'Arte y Naturaleza',        'Conexión entre las pinturas de naturaleza y el entorno guatemalteco.',   '2025-04-04', '2025-04-04', '10:00 - 12:00', 110.00),
-(4, 'Mujeres Artistas',         'Tour dedicado a las obras de artistas femeninas de la galería.',         '2025-04-18', '2025-04-18', '14:00 - 16:00', 140.00),
-(1, 'Historia del Arte Maya',   'Conferencia y recorrido sobre la historia del arte maya guatemalteco.',  '2025-05-02', '2025-05-02', '09:00 - 12:00', 180.00),
-(4, 'Arte Abstracto',           'Introducción al arte abstracto guatemalteco contemporáneo.',             '2025-05-16', '2025-05-16', '15:00 - 17:00', 120.00);
+(1, 'Neo-Expresionismo y Basquiat', 'Recorrido por las obras neo-expresionistas y el legado de Basquiat.',           '2025-01-10', '2025-01-10', '10:00 - 12:00', 150.00),
+(4, 'Arte Callejero Global',        'Visita guiada por las obras de Banksy y Shepard Fairey.',                       '2025-01-17', '2025-01-17', '14:00 - 16:00', 120.00),
+(1, 'Colecciones Exclusivas',       'Tour privado por las colecciones exclusivas más cotizadas de la galería.',      '2025-02-07', '2025-02-07', '09:00 - 11:00', 300.00),
+(4, 'Arte Japonés Contemporáneo',   'Recorrido por las obras de Kusama y Murakami.',                                 '2025-02-14', '2025-02-14', '15:00 - 17:00', 180.00),
+(1, 'Identidad y Cultura',          'Exploración de obras que redefinen la identidad cultural afroamericana.',       '2025-03-07', '2025-03-07', '11:00 - 13:00', 160.00),
+(4, 'Noche de Arte Moderno',        'Tour nocturno especial con cóctel de bienvenida incluido.',                     '2025-03-21', '2025-03-21', '19:00 - 21:00', 250.00),
+(1, 'Pop Art y Cultura Popular',    'Conexión entre el pop art clásico y el arte de Koons y KAWS.',                  '2025-04-04', '2025-04-04', '10:00 - 12:00', 140.00),
+(4, 'Arte que Rompe Récords',       'Tour dedicado a las obras más costosas y controversiales del arte moderno.',    '2025-04-18', '2025-04-18', '14:00 - 16:00', 200.00),
+(1, 'Historia del Arte Urbano',     'Conferencia y recorrido sobre la evolución del street art al arte de galería.', '2025-05-02', '2025-05-02', '09:00 - 12:00', 180.00),
+(4, 'Arte Abstracto Contemporáneo', 'Introducción al arte abstracto con obras de Kusama y Hirst.',                   '2025-05-16', '2025-05-16', '15:00 - 17:00', 130.00);
 
 -- ============================================
 -- CLIENTE_TOUR
@@ -226,78 +234,78 @@ INSERT INTO cliente_tour (id_cliente, id_tour, fecha_reserva) VALUES
 -- VENTAS
 -- ============================================
 INSERT INTO venta (id_cliente, id_empleado, fecha_venta, precio) VALUES
-(1,  2, '2025-01-15', 15000.00),
-(3,  5, '2025-01-22', 18000.00),
-(5,  2, '2025-02-03', 22000.00),
-(7,  5, '2025-02-14', 8500.00),
-(9,  2, '2025-02-28', 12000.00),
-(1,  5, '2025-03-05', 19000.00),
-(12, 2, '2025-03-12', 9500.00),
-(3,  5, '2025-03-20', 13000.00),
-(5,  2, '2025-04-02', 25000.00),
-(7,  5, '2025-04-10', 14000.00),
-(15, 2, '2025-04-18', 6000.00),
-(9,  5, '2025-04-25', 30000.00),
-(1,  2, '2025-05-01', 17000.00),
-(3,  5, '2025-05-08', 8000.00),
-(5,  2, '2025-05-15', 20000.00),
-(7,  5, '2025-05-22', 11500.00),
-(9,  2, '2025-06-01', 7500.00),
-(12, 5, '2025-06-08', 16000.00),
-(15, 2, '2025-06-15', 9000.00),
-(1,  5, '2025-06-22', 5500.00),
-(3,  2, '2025-07-01', 11000.00),
-(5,  5, '2025-07-08', 7000.00),
-(7,  2, '2025-07-15', 4500.00),
-(9,  5, '2025-07-22', 10000.00),
-(12, 2, '2025-07-29', 8500.00);
+(1,  2, '2025-01-15', 95000.00),
+(3,  5, '2025-01-22', 90000.00),
+(5,  2, '2025-02-03', 120000.00),
+(7,  5, '2025-02-14', 88000.00),
+(9,  2, '2025-02-28', 72000.00),
+(1,  5, '2025-03-05', 99000.00),
+(12, 2, '2025-03-12', 68000.00),
+(3,  5, '2025-03-20', 82000.00),
+(5,  2, '2025-04-02', 75000.00),
+(7,  5, '2025-04-10', 67000.00),
+(15, 2, '2025-04-18', 45000.00),
+(9,  5, '2025-04-25', 88000.00),
+(1,  2, '2025-05-01', 76000.00),
+(3,  5, '2025-05-08', 42000.00),
+(5,  2, '2025-05-15', 92000.00),
+(7,  5, '2025-05-22', 71000.00),
+(9,  2, '2025-06-01', 54000.00),
+(12, 5, '2025-06-08', 38000.00),
+(15, 2, '2025-06-15', 32000.00),
+(1,  5, '2025-06-22', 58000.00),
+(3,  2, '2025-07-01', 65000.00),
+(5,  5, '2025-07-08', 63000.00),
+(7,  2, '2025-07-15', 78000.00),
+(9,  5, '2025-07-22', 55000.00),
+(12, 2, '2025-07-29', 85000.00);
 
 -- ============================================
 -- DETALLE_VENTA
 -- ============================================
 INSERT INTO detalle_venta (id_venta, id_pintura, cantidad, precio_unitario) VALUES
-(1,  1,  1, 15000.00),
-(2,  4,  1, 18000.00),
-(3,  6,  1, 22000.00),
-(4,  2,  1, 8500.00),
-(5,  3,  1, 12000.00),
-(6,  11, 1, 19000.00),
-(7,  5,  1, 9500.00),
-(8,  12, 1, 13000.00),
-(9,  16, 1, 25000.00),
-(10, 9,  1, 14000.00),
-(11, 7,  1, 6000.00),
-(12, 21, 1, 30000.00),
-(13, 22, 1, 17000.00),
-(14, 13, 1, 8000.00),
-(15, 24, 1, 20000.00),
-(16, 25, 1, 11500.00),
-(17, 10, 1, 7500.00),
-(18, 14, 1, 16000.00),
-(19, 19, 1, 9000.00),
-(20, 15, 1, 5500.00),
-(21, 8,  1, 11000.00),
-(22, 20, 1, 7000.00),
-(23, 17, 1, 4500.00),
-(24, 18, 1, 10000.00),
-(25, 23, 1, 8500.00);
+(1,  1,  1, 95000.00),
+(2,  7,  1, 90000.00),
+(3,  10, 1, 120000.00),
+(4,  4,  1, 88000.00),
+(5,  5,  1, 72000.00),
+(6,  12, 1, 99000.00),
+(7,  8,  1, 68000.00),
+(8,  15, 1, 82000.00),
+(9,  14, 1, 75000.00),
+(10, 17, 1, 67000.00),
+(11, 9,  1, 45000.00),
+(12, 21, 1, 88000.00),
+(13, 22, 1, 76000.00),
+(14, 13, 1, 42000.00),
+(15, 23, 1, 92000.00),
+(16, 24, 1, 71000.00),
+(17, 18, 1, 54000.00),
+(18, 19, 1, 38000.00),
+(19, 20, 1, 32000.00),
+(20, 16, 1, 58000.00),
+(21, 3,  1, 65000.00),
+(22, 25, 1, 63000.00),
+(23, 2,  1, 78000.00),
+(24, 11, 1, 55000.00),
+(25, 6,  1, 85000.00);
 
 -- ============================================
 -- ENVÍOS
 -- ============================================
 INSERT INTO envio (id_venta, direccion_envio, fecha_envio, estado_envio) VALUES
-(1,  'Zona 10, Calle Reforma 12-34, Ciudad de Guatemala',          '2025-01-18', 'entregado'),
-(2,  'Zona 15, Vista Hermosa 3-45, Ciudad de Guatemala',           '2025-01-25', 'entregado'),
-(3,  'Zona 16, Cayalá Torre A, Ciudad de Guatemala',               '2025-02-06', 'entregado'),
-(4,  'Zona 10, Blvd Los Próceres, Ciudad de Guatemala',            '2025-02-17', 'entregado'),
-(5,  'Zona 10, Oakland Mall área, Ciudad de Guatemala',            '2025-03-03', 'entregado'),
-(6,  'Av. Brickell 1234, Apt 5B, Miami, Florida, USA',             '2025-03-08', 'entregado'),
-(7,  'Zona 12, Colonia La Florida, Ciudad de Guatemala',           '2025-03-15', 'entregado'),
-(8,  'Calle Serrano 45, Piso 3, Madrid, España',                   '2025-03-25', 'en tránsito'),
-(9,  'Zona 16, Cayalá Torre A, Ciudad de Guatemala',               '2025-04-05', 'entregado'),
-(10, 'Via Condotti 12, Int 4, Roma, Italia',                       '2025-04-15', 'entregado'),
-(12, 'Zona 10, Oakland Mall área, Ciudad de Guatemala',            '2025-04-28', 'entregado'),
-(13, 'Zona 10, Calle Reforma 12-34, Ciudad de Guatemala',          '2025-05-04', 'entregado'),
-(15, 'Zona 16, Cayalá Torre A, Ciudad de Guatemala',               '2025-05-18', 'en tránsito'),
-(16, 'Zona 10, Blvd Los Próceres, Ciudad de Guatemala',            '2025-05-25', 'entregado'),
-(18, 'Zona 7, Tikal 2 Sector B, Ciudad de Guatemala',              '2025-06-11', 'entregado');
+(1,  'Zona 10, Calle Reforma 12-34, Ciudad de Guatemala',   '2025-01-18', 'entregado'),
+(2,  'Zona 15, Vista Hermosa 3-45, Ciudad de Guatemala',    '2025-01-25', 'entregado'),
+(3,  'Zona 16, Cayalá Torre A, Ciudad de Guatemala',        '2025-02-06', 'entregado'),
+(4,  'Zona 10, Blvd Los Próceres, Ciudad de Guatemala',     '2025-02-17', 'entregado'),
+(5,  'Zona 10, Oakland Mall área, Ciudad de Guatemala',     '2025-03-03', 'entregado'),
+(6,  'Av. Brickell 1234, Apt 5B, Miami, Florida, USA',      '2025-03-08', 'entregado'),
+(7,  'Zona 12, Colonia La Florida, Ciudad de Guatemala',    '2025-03-15', 'entregado'),
+(8,  'Calle Serrano 45, Piso 3, Madrid, España',            '2025-03-25', 'en tránsito'),
+(9,  'Zona 16, Cayalá Torre A, Ciudad de Guatemala',        '2025-04-05', 'entregado'),
+(10, 'Via Condotti 12, Int 4, Roma, Italia',                '2025-04-15', 'entregado'),
+(12, 'Zona 10, Oakland Mall área, Ciudad de Guatemala',     '2025-04-28', 'entregado'),
+(13, 'Zona 10, Calle Reforma 12-34, Ciudad de Guatemala',   '2025-05-04', 'entregado'),
+(15, 'Zona 16, Cayalá Torre A, Ciudad de Guatemala',        '2025-05-18', 'en tránsito'),
+(16, 'Zona 10, Blvd Los Próceres, Ciudad de Guatemala',     '2025-05-25', 'entregado'),
+(18, 'Zona 7, Tikal 2 Sector B, Ciudad de Guatemala',       '2025-06-11', 'entregado');
