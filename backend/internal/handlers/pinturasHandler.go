@@ -3,11 +3,11 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
+	"magic-bag-gallery-api/internal/models"
 	"net/http"
 	"strconv"
 
 	"github.com/gorilla/mux"
-	"github.com/MagicBag-tab/magicbag/models"
 )
 
 var db *sql.DB
@@ -16,11 +16,11 @@ func SetDB(database *sql.DB) {
 	db = database
 }
 
-func getPinturasHandler(w http.ResponseWriter, r *http.Request) {
+func GetPinturasHandler(w http.ResponseWriter, r *http.Request) {
 	query := `
 		SELECT p.id_pintura, p.titulo, p.descripcion, p.fecha_creacion,
 		       p.precio, p.exclusiva, p.imagen_path, p.imagen_tipo, p.imagen_nombre,
-		       a.nombre as artista,
+		       a.nombre_completo as artista,
 		       COALESCE(c.nombre, '') as coleccion
 		FROM pintura p
 		JOIN artista a ON p.id_artista = a.id_artista
@@ -72,7 +72,7 @@ func getPinturasHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(pinturas)
 }
 
-func getPinturaByIDHandler(w http.ResponseWriter, r *http.Request) {
+func GetPinturaByIDHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(mux.Vars(r)["id"])
 	if err != nil {
 		http.Error(w, "ID inválido", http.StatusBadRequest)
@@ -83,7 +83,7 @@ func getPinturaByIDHandler(w http.ResponseWriter, r *http.Request) {
 	err = db.QueryRow(`
 		SELECT p.id_pintura, p.titulo, p.descripcion, p.fecha_creacion,
 		       p.precio, p.exclusiva, p.imagen_path, p.imagen_tipo, p.imagen_nombre,
-		       a.nombre as artista,
+		       a.nombre_completo as artista,
 		       COALESCE(c.nombre, '') as coleccion
 		FROM pintura p
 		JOIN artista a ON p.id_artista = a.id_artista
@@ -123,7 +123,7 @@ func getPinturaByIDHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(p)
 }
 
-func createPinturaHandler(w http.ResponseWriter, r *http.Request) {
+func CreatePinturaHandler(w http.ResponseWriter, r *http.Request) {
 	var req models.PinturaRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Body inválido", http.StatusBadRequest)
@@ -173,7 +173,7 @@ func createPinturaHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]int{"id_pintura": id})
 }
 
-func updatePinturaHandler(w http.ResponseWriter, r *http.Request) {
+func UpdatePinturaHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(mux.Vars(r)["id"])
 	if err != nil {
 		http.Error(w, "ID inválido", http.StatusBadRequest)
@@ -233,7 +233,7 @@ func updatePinturaHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"mensaje": "Pintura actualizada"})
 }
 
-func deletePinturaHandler(w http.ResponseWriter, r *http.Request) {
+func DeletePinturaHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(mux.Vars(r)["id"])
 	if err != nil {
 		http.Error(w, "ID inválido", http.StatusBadRequest)
@@ -270,7 +270,7 @@ func deletePinturaHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"mensaje": "Pintura eliminada"})
 }
 
-func getPinturasByArtistaHandler(w http.ResponseWriter, r *http.Request) {
+func GetPinturasByArtistaHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(mux.Vars(r)["id_artista"])
 	if err != nil {
 		http.Error(w, "ID inválido", http.StatusBadRequest)
@@ -280,7 +280,7 @@ func getPinturasByArtistaHandler(w http.ResponseWriter, r *http.Request) {
 	rows, err := db.Query(`
 		SELECT p.id_pintura, p.titulo, p.descripcion, p.fecha_creacion,
 		       p.precio, p.exclusiva, p.imagen_path, p.imagen_tipo, p.imagen_nombre,
-		       a.nombre as artista,
+		       a.nombre_completo as artista,
 		       COALESCE(c.nombre, '') as coleccion
 		FROM pintura p
 		JOIN artista a ON p.id_artista = a.id_artista
@@ -308,7 +308,7 @@ func getPinturasByArtistaHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(pinturas)
 }
 
-func getPinturasByColeccionHandler(w http.ResponseWriter, r *http.Request) {
+func GetPinturasByColeccionHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(mux.Vars(r)["id_coleccion"])
 	if err != nil {
 		http.Error(w, "ID inválido", http.StatusBadRequest)
@@ -318,7 +318,7 @@ func getPinturasByColeccionHandler(w http.ResponseWriter, r *http.Request) {
 	rows, err := db.Query(`
 		SELECT p.id_pintura, p.titulo, p.descripcion, p.fecha_creacion,
 		       p.precio, p.exclusiva, p.imagen_path, p.imagen_tipo, p.imagen_nombre,
-		       a.nombre as artista,
+		       a.nombre_completo as artista,
 		       COALESCE(c.nombre, '') as coleccion
 		FROM pintura p
 		JOIN artista a ON p.id_artista = a.id_artista
@@ -346,7 +346,7 @@ func getPinturasByColeccionHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(pinturas)
 }
 
-func getPinturasByTecnicaHandler(w http.ResponseWriter, r *http.Request) {
+func GetPinturasByTecnicaHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(mux.Vars(r)["id_tecnica"])
 	if err != nil {
 		http.Error(w, "ID inválido", http.StatusBadRequest)
@@ -356,7 +356,7 @@ func getPinturasByTecnicaHandler(w http.ResponseWriter, r *http.Request) {
 	rows, err := db.Query(`
 		SELECT p.id_pintura, p.titulo, p.descripcion, p.fecha_creacion,
 		       p.precio, p.exclusiva, p.imagen_path, p.imagen_tipo, p.imagen_nombre,
-		       a.nombre as artista,
+		       a.nombre_completo as artista,
 		       COALESCE(c.nombre, '') as coleccion
 		FROM pintura p
 		JOIN artista a ON p.id_artista = a.id_artista

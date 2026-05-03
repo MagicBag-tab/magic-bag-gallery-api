@@ -79,9 +79,9 @@ INSERT INTO direccion (id_cliente, detalle, nombre, ciudad, estado, codigo_posta
 (12, 'Zona 7, Tikal 2 Sector B',      'Casa',               'Ciudad de Guatemala', 'Guatemala',          '01007', 'Guatemala');
 
 -- ============================================
--- ARTISTAS (nombre completo en un solo campo)
+-- ARTISTAS 
 -- ============================================
-INSERT INTO artista (nombre, nacionalidad, id_reclutador) VALUES
+INSERT INTO artista (nombre_completo, nacionalidad, id_reclutador) VALUES
 ('Jean-Michel Basquiat', 'Estadounidense', 3),
 ('Banksy',               'Británica',      3),
 ('Yayoi Kusama',         'Japonesa',       3),
