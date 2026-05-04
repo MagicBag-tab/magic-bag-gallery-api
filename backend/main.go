@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"magic-bag-gallery-api/internal/handlers"
+	"magic-bag-gallery-api/internal/middleware"
 
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
@@ -63,17 +64,35 @@ func connectDB() error {
 
 func setupRouter() http.Handler {
 	router := mux.NewRouter()
+
+	router.HandleFunc("/api/login", handlers.LoginHandler).Methods("POST")
+	router.HandleFunc("/api/register/cliente", handlers.RegisterClienteHandler).Methods("POST")
+
 	router.HandleFunc("/api/pinturas", handlers.GetPinturasHandler).Methods("GET")
 	router.HandleFunc("/api/pinturas/{id}", handlers.GetPinturaByIDHandler).Methods("GET")
-	router.HandleFunc("/api/pinturas", handlers.CreatePinturaHandler).Methods("POST")
-	router.HandleFunc("/api/pinturas/{id}", handlers.UpdatePinturaHandler).Methods("PUT")
-	router.HandleFunc("/api/pinturas/{id}", handlers.DeletePinturaHandler).Methods("DELETE")
-
 	router.HandleFunc("/api/artistas", handlers.GetArtistasHandler).Methods("GET")
 	router.HandleFunc("/api/artistas/{id}", handlers.GetArtistaByIDHandler).Methods("GET")
-	router.HandleFunc("/api/artistas", handlers.CreateArtistaHandler).Methods("POST")
-	router.HandleFunc("/api/artistas/{id}", handlers.UpdateArtistaHandler).Methods("PUT")
-	router.HandleFunc("/api/artistas/{id}", handlers.DeleteArtistaHandler).Methods("DELETE")
+
+	api := router.PathPrefix("/api").Subrouter()
+	api.Use(middleware.JWTMiddleware)
+
+	admin := router.PathPrefix("/api").Subrouter()
+	admin.Use(middleware.JWTMiddleware)
+	admin.Use(middleware.RequireRole("empleado"))
+
+	admin.HandleFunc("/auth/register/empleado", handlers.RegisterEmpleadoHandler).Methods("POST")
+
+	admin.HandleFunc("/pinturas", handlers.CreatePinturaHandler).Methods("POST")
+	admin.HandleFunc("/pinturas/{id}", handlers.UpdatePinturaHandler).Methods("PUT")
+	admin.HandleFunc("/pinturas/{id}", handlers.DeletePinturaHandler).Methods("DELETE")
+
+	admin.HandleFunc("/artistas", handlers.CreateArtistaHandler).Methods("POST")
+	admin.HandleFunc("/artistas/{id}", handlers.UpdateArtistaHandler).Methods("PUT")
+	admin.HandleFunc("/artistas/{id}", handlers.DeleteArtistaHandler).Methods("DELETE")
+
+	//router.HandleFunc("/api/pinturaByArtista/{id_artista}", handlers.GetPinturasByArtistaHandler).Methods("GET")
+	//router.HandleFunc("/api/pinturaByColeccion/{id_coleccion}", handlers.GetPinturasByColeccionHandler).Methods("GET")
+	//router.HandleFunc("/api/pinturaByTecnica/{id_tecnica}", handlers.GetPinturasByTecnicaHandler).Methods("GET")
 
 	//router.HandleFunc("/api/colecciones", getColecciones).Methods("GET")
 	//router.HandleFunc("/api/colecciones/{id}", getColeccionByID).Methods("GET")
@@ -116,10 +135,6 @@ func setupRouter() http.Handler {
 	//router.HandleFunc("/api/reservas", createReserva).Methods("POST")
 	//router.HandleFunc("/api/reservas/{id}", updateReserva).Methods("PUT")
 	//router.HandleFunc("/api/reservas/{id}", deleteReserva).Methods("DELETE")
-
-	//router.HandleFunc("/api/pinturaByTecnica/{id_tecnica}", getPinturasByTecnicaHandler).Methods("GET")
-	//router.HandleFunc("/api/pinturaByColeccion/{id_coleccion}", getPinturasByColeccionHandler).Methods("GET")
-	//router.HandleFunc("/api/pinturaByArtista/{id_artista}", getPinturasByArtistaHandler).Methods("GET")
 
 	return router
 }
