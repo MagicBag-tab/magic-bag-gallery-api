@@ -74,6 +74,8 @@ func setupRouter() http.Handler {
 	router.HandleFunc("/api/artistas/{id}", handlers.GetArtistaByIDHandler).Methods("GET")
 	router.HandleFunc("/api/colecciones", handlers.GetColeccionesHandler).Methods("GET")
 	router.HandleFunc("/api/colecciones/{id}", handlers.GetColeccionByIDHandler).Methods("GET")
+	router.HandleFunc("/api/tecnicas", handlers.GetTecnicasHandler).Methods("GET")
+	router.HandleFunc("/api/tecnicas/{id}", handlers.GetTecnicaByIDHandler).Methods("GET")
 
 	api := router.PathPrefix("/api").Subrouter()
 	api.Use(middleware.JWTMiddleware)
@@ -96,21 +98,19 @@ func setupRouter() http.Handler {
 	admin.HandleFunc("/colecciones/{id}", handlers.UpdateColeccionHandler).Methods("PUT")
 	admin.HandleFunc("/colecciones/{id}", handlers.DeleteColeccionHandler).Methods("DELETE")
 
+	admin.HandleFunc("/tecnicas", handlers.CreateTecnicaHandler).Methods("POST")
+	admin.HandleFunc("/tecnicas/{id}", handlers.UpdateTecnicaHandler).Methods("PUT")
+	admin.HandleFunc("/tecnicas/{id}", handlers.DeleteTecnicaHandler).Methods("DELETE")
+
+	admin.HandleFunc("/usuarios", handlers.GetUsuariosHandler).Methods("GET")
+	admin.HandleFunc("/usuarios/{id}", handlers.GetUsuarioByIDHandler).Methods("GET")
+	admin.HandleFunc("/usuarios", handlers.CreateUsuarioHandler).Methods("POST")
+	admin.HandleFunc("/usuarios/{id}", handlers.UpdateUsuarioHandler).Methods("PUT")
+	admin.HandleFunc("/usuarios/{id}", handlers.DeleteUsuarioHandler).Methods("DELETE")
+
 	//router.HandleFunc("/api/pinturaByArtista/{id_artista}", handlers.GetPinturasByArtistaHandler).Methods("GET")
 	//router.HandleFunc("/api/pinturaByColeccion/{id_coleccion}", handlers.GetPinturasByColeccionHandler).Methods("GET")
 	//router.HandleFunc("/api/pinturaByTecnica/{id_tecnica}", handlers.GetPinturasByTecnicaHandler).Methods("GET")
-
-	//router.HandleFunc("/api/tecnicas", getTecnicas).Methods("GET")
-	//router.HandleFunc("/api/tecnicas/{id}", getTecnicaByID).Methods("GET")
-	//router.HandleFunc("/api/tecnicas", createTecnica).Methods("POST")
-	//router.HandleFunc("/api/tecnicas/{id}", updateTecnica).Methods("PUT")
-	//router.HandleFunc("/api/tecnicas/{id}", deleteTecnica).Methods("DELETE")
-
-	//router.HandleFunc("/api/usuarios", getUsuarios).Methods("GET")
-	//router.HandleFunc("/api/usuarios/{id}", getUsuarioByID).Methods("GET")
-	//router.HandleFunc("/api/usuarios", createUsuario).Methods("POST")
-	//router.HandleFunc("/api/usuarios/{id}", updateUsuario).Methods("PUT")
-	//router.HandleFunc("/api/usuarios/{id}", deleteUsuario).Methods("DELETE")
 
 	//router.HandleFunc("/api/ventas", getVentas).Methods("GET")
 	//router.HandleFunc("/api/ventas/{id}", getVentaByID).Methods("GET")
