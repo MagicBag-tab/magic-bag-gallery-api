@@ -10,12 +10,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-var db *sql.DB
-
-func SetDB(database *sql.DB) {
-	db = database
-}
-
 func GetPinturasHandler(w http.ResponseWriter, r *http.Request) {
 	query := `
 		SELECT p.id_pintura, p.titulo, p.descripcion, p.fecha_creacion,
@@ -83,7 +77,7 @@ func GetPinturaByIDHandler(w http.ResponseWriter, r *http.Request) {
 	err = db.QueryRow(`
 		SELECT p.id_pintura, p.titulo, p.descripcion, p.fecha_creacion,
 		       p.precio, p.exclusiva, p.imagen_path, p.imagen_tipo, p.imagen_nombre,
-		       a.nombre_completo as artista,
+		       a.nombre as artista,
 		       COALESCE(c.nombre, '') as coleccion
 		FROM pintura p
 		JOIN artista a ON p.id_artista = a.id_artista
@@ -141,7 +135,6 @@ func CreatePinturaHandler(w http.ResponseWriter, r *http.Request) {
 		INSERT INTO pintura (titulo, descripcion, fecha_creacion, precio, exclusiva,
 		                     imagen_path, imagen_tipo, imagen_nombre, id_artista, id_coleccion)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-		RETURNING id_pintura
 	`, req.Titulo, req.Descripcion, req.FechaCreacion, req.Precio, req.Exclusiva,
 		req.ImagenPath, req.ImagenTipo, req.ImagenNombre, req.IDArtista, req.IDColeccion,
 	).Scan(&id)

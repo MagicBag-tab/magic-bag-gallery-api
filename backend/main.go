@@ -69,11 +69,11 @@ func setupRouter() http.Handler {
 	router.HandleFunc("/api/pinturas/{id}", handlers.UpdatePinturaHandler).Methods("PUT")
 	router.HandleFunc("/api/pinturas/{id}", handlers.DeletePinturaHandler).Methods("DELETE")
 
-	//router.HandleFunc("/api/artistas", getArtistas).Methods("GET")
-	//router.HandleFunc("/api/artistas/{id}", getArtistaByID).Methods("GET")
-	//router.HandleFunc("/api/artistas", createArtista).Methods("POST")
-	//router.HandleFunc("/api/artistas/{id}", updateArtista).Methods("PUT")
-	//router.HandleFunc("/api/artistas/{id}", deleteArtista).Methods("DELETE")
+	router.HandleFunc("/api/artistas", handlers.GetArtistasHandler).Methods("GET")
+	router.HandleFunc("/api/artistas/{id}", handlers.GetArtistaByIDHandler).Methods("GET")
+	router.HandleFunc("/api/artistas", handlers.CreateArtistaHandler).Methods("POST")
+	router.HandleFunc("/api/artistas/{id}", handlers.UpdateArtistaHandler).Methods("PUT")
+	router.HandleFunc("/api/artistas/{id}", handlers.DeleteArtistaHandler).Methods("DELETE")
 
 	//router.HandleFunc("/api/colecciones", getColecciones).Methods("GET")
 	//router.HandleFunc("/api/colecciones/{id}", getColeccionByID).Methods("GET")
