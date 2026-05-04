@@ -72,6 +72,8 @@ func setupRouter() http.Handler {
 	router.HandleFunc("/api/pinturas/{id}", handlers.GetPinturaByIDHandler).Methods("GET")
 	router.HandleFunc("/api/artistas", handlers.GetArtistasHandler).Methods("GET")
 	router.HandleFunc("/api/artistas/{id}", handlers.GetArtistaByIDHandler).Methods("GET")
+	router.HandleFunc("/api/colecciones", handlers.GetColeccionesHandler).Methods("GET")
+	router.HandleFunc("/api/colecciones/{id}", handlers.GetColeccionByIDHandler).Methods("GET")
 
 	api := router.PathPrefix("/api").Subrouter()
 	api.Use(middleware.JWTMiddleware)
@@ -90,15 +92,13 @@ func setupRouter() http.Handler {
 	admin.HandleFunc("/artistas/{id}", handlers.UpdateArtistaHandler).Methods("PUT")
 	admin.HandleFunc("/artistas/{id}", handlers.DeleteArtistaHandler).Methods("DELETE")
 
+	admin.HandleFunc("/colecciones", handlers.CreateColeccionHandler).Methods("POST")
+	admin.HandleFunc("/colecciones/{id}", handlers.UpdateColeccionHandler).Methods("PUT")
+	admin.HandleFunc("/colecciones/{id}", handlers.DeleteColeccionHandler).Methods("DELETE")
+
 	//router.HandleFunc("/api/pinturaByArtista/{id_artista}", handlers.GetPinturasByArtistaHandler).Methods("GET")
 	//router.HandleFunc("/api/pinturaByColeccion/{id_coleccion}", handlers.GetPinturasByColeccionHandler).Methods("GET")
 	//router.HandleFunc("/api/pinturaByTecnica/{id_tecnica}", handlers.GetPinturasByTecnicaHandler).Methods("GET")
-
-	//router.HandleFunc("/api/colecciones", getColecciones).Methods("GET")
-	//router.HandleFunc("/api/colecciones/{id}", getColeccionByID).Methods("GET")
-	//router.HandleFunc("/api/colecciones", createColeccion).Methods("POST")
-	//router.HandleFunc("/api/colecciones/{id}", updateColeccion).Methods("PUT")
-	//router.HandleFunc("/api/colecciones/{id}", deleteColeccion).Methods("DELETE")
 
 	//router.HandleFunc("/api/tecnicas", getTecnicas).Methods("GET")
 	//router.HandleFunc("/api/tecnicas/{id}", getTecnicaByID).Methods("GET")
