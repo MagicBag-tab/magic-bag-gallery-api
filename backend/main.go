@@ -70,6 +70,9 @@ func connectDB() error {
 func setupRouter() http.Handler {
 	router := mux.NewRouter()
 
+	// Servir archivos estáticos (imágenes) desde la carpeta uploads
+	router.PathPrefix("/uploads/").Handler(http.StripPrefix("/uploads/", http.FileServer(http.Dir("./uploads"))))
+
 	router.HandleFunc("/api/login", handlers.LoginHandler).Methods("POST")
 	router.HandleFunc("/api/register/cliente", handlers.RegisterClienteHandler).Methods("POST")
 

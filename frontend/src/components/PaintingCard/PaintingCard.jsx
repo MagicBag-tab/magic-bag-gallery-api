@@ -4,9 +4,17 @@ export default function PaintingCard({ pintura, onClick }) {
   return (
     <article className={styles.card} onClick={() => onClick?.(pintura)}>
       <div className={styles.imageWrapper}>
-        <div className={styles.imagePlaceholder}>
-          <span className={styles.initial}>{pintura.titulo?.[0]}</span>
-        </div>
+        {pintura.imagen_path ? (
+          <img 
+            src={`http://localhost:8888${pintura.imagen_path}`} 
+            alt={pintura.titulo} 
+            style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px' }}
+          />
+        ) : (
+          <div className={styles.imagePlaceholder}>
+            <span className={styles.initial}>{pintura.titulo?.[0]}</span>
+          </div>
+        )}
         {pintura.exclusiva && <span className={styles.badge}>Exclusiva</span>}
       </div>
       <div className={styles.info}>

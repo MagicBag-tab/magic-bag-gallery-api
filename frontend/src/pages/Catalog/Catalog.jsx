@@ -79,7 +79,15 @@ export default function Catalog() {
           <div className={styles.detail}>
             <div className={styles.detailImageWrapper}>
               <div className={styles.detailImage}>
-                <span className={styles.detailInitial}>{selected.titulo?.[0]}</span>
+                {selected.imagen_path ? (
+                  <img 
+                    src={`http://localhost:8888${selected.imagen_path}`} 
+                    alt={selected.titulo} 
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px' }}
+                  />
+                ) : (
+                  <span className={styles.detailInitial}>{selected.titulo?.[0]}</span>
+                )}
               </div>
               {selected.exclusiva && <span className={styles.detailBadge}>Obra Exclusiva</span>}
             </div>
