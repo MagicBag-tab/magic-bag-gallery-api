@@ -344,7 +344,7 @@ func ReporteTopArtistasPorVentasHandler(w http.ResponseWriter, r *http.Request) 
 	defer rows.Close()
 
 	type TopArtista struct {
-		IDArticle        int     `json:"id_artista"`
+		IDArtista        int     `json:"id_artista"`
 		NombreCompleto   string  `json:"nombre_completo"`
 		Nacionalidad     string  `json:"nacionalidad"`
 		VentasRealizadas int     `json:"ventas_realizadas"`
@@ -356,7 +356,7 @@ func ReporteTopArtistasPorVentasHandler(w http.ResponseWriter, r *http.Request) 
 	for rows.Next() {
 		var t TopArtista
 		if err := rows.Scan(
-			&t.IDArticle, &t.NombreCompleto, &t.Nacionalidad,
+			&t.IDArtista, &t.NombreCompleto, &t.Nacionalidad,
 			&t.VentasRealizadas, &t.IngresosTotales, &t.Posicion,
 		); err != nil {
 			http.Error(w, "Error al leer datos", http.StatusInternalServerError)
