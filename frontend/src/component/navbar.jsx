@@ -18,25 +18,13 @@ export default function Navbar() {
       </div>
 
       <nav className={styles.nav}>
-        <NavLink to="/catalogo" className={({ isActive }) => `${styles.navLink}${isActive ? ' ' + styles.active : ''}`}>
-          Catálogo
-        </NavLink>
-        <NavLink to="/artistas" className={({ isActive }) => `${styles.navLink}${isActive ? ' ' + styles.active : ''}`}>
-          Artistas
-        </NavLink>
-        <NavLink to="/colecciones" className={({ isActive }) => `${styles.navLink}${isActive ? ' ' + styles.active : ''}`}>
-          Colecciones
-        </NavLink>
-        <NavLink to="/tours" className={({ isActive }) => `${styles.navLink}${isActive ? ' ' + styles.active : ''}`}>
-          Tours
-        </NavLink>
-        <NavLink to="/reportes" className={({ isActive }) => `${styles.navLink}${isActive ? ' ' + styles.active : ''}`}>
-          Reportes
-        </NavLink>
+        <NavLink to="/catalogo" className={({ isActive }) => `${styles.navLink}${isActive ? ' ' + styles.active : ''}`}>Catálogo</NavLink>
+        <NavLink to="/artistas" className={({ isActive }) => `${styles.navLink}${isActive ? ' ' + styles.active : ''}`}>Artistas</NavLink>
+        <NavLink to="/colecciones" className={({ isActive }) => `${styles.navLink}${isActive ? ' ' + styles.active : ''}`}>Colecciones</NavLink>
+        <NavLink to="/tours" className={({ isActive }) => `${styles.navLink}${isActive ? ' ' + styles.active : ''}`}>Tours</NavLink>
+        <NavLink to="/reportes" className={({ isActive }) => `${styles.navLink}${isActive ? ' ' + styles.active : ''}`}>Reportes</NavLink>
         {isEmpleado && (
-          <NavLink to="/admin" className={({ isActive }) => `${styles.navLink}${isActive ? ' ' + styles.active : ''}`}>
-            Admin
-          </NavLink>
+          <NavLink to="/admin" className={({ isActive }) => `${styles.navLink}${isActive ? ' ' + styles.active : ''}`}>Admin</NavLink>
         )}
       </nav>
 

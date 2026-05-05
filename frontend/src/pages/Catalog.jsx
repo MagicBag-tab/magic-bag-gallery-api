@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getPinturas } from '../../services/api';
+import { getPinturas } from '../../api/api';
 import PaintingCard from '../../components/PaintingCard/PaintingCard';
 import Loader from '../../components/Loader/Loader';
 import Modal from '../../components/Modal/Modal';
@@ -53,11 +53,7 @@ export default function Catalog() {
         <div className={styles.filters}>
           <span className={styles.filterLabel}>Exclusividad:</span>
           {['all', 'si', 'no'].map(v => (
-            <button
-              key={v}
-              className={`${styles.filterBtn} ${filterExclusiva === v ? styles.active : ''}`}
-              onClick={() => setFilterExclusiva(v)}
-            >
+            <button key={v} className={`${styles.filterBtn} ${filterExclusiva === v ? styles.active : ''}`} onClick={() => setFilterExclusiva(v)}>
               {v === 'all' ? 'Todas' : v === 'si' ? 'Exclusivas' : 'Estándar'}
             </button>
           ))}
@@ -73,9 +69,7 @@ export default function Catalog() {
             </div>
           ))}
           {filtered.length === 0 && (
-            <div className={styles.empty}>
-              <p>No se encontraron obras con esos criterios.</p>
-            </div>
+            <div className={styles.empty}><p>No se encontraron obras con esos criterios.</p></div>
           )}
         </div>
       )}

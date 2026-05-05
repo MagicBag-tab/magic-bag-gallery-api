@@ -1,7 +1,4 @@
-.footer {
-  margin-top: 6rem;
-  padding: 0 2rem 2rem;
-}
+.footer { margin-top: 6rem; padding: 0 2rem 2rem; }
 
 .divider {
   height: 1px;
@@ -9,11 +6,7 @@
   margin-bottom: 2rem;
 }
 
-.inner {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
+.inner { display: flex; justify-content: space-between; align-items: center; }
 
 .brand {
   font-family: var(--font-display);

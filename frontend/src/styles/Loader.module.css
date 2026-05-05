@@ -1,26 +1,13 @@
-.wrapper {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 4rem;
-}
+.wrapper { display: flex; justify-content: center; align-items: center; padding: 4rem; }
+.fullPage { min-height: 60vh; }
 
-.fullPage {
-  min-height: 60vh;
-}
-
-.ring {
-  position: relative;
-  width: 40px;
-  height: 40px;
-}
+.ring { position: relative; width: 40px; height: 40px; }
 
 .ring div {
   box-sizing: border-box;
   display: block;
   position: absolute;
-  width: 40px;
-  height: 40px;
+  width: 40px; height: 40px;
   border: 2px solid transparent;
   border-radius: 50%;
   animation: spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;

@@ -121,12 +121,21 @@
   color: var(--text-muted);
 }
 
-.loginLink { color: var(--gold); }
+.loginLink {
+  color: var(--gold);
+}
 
-/* Reserva form */
-.reservaForm { display: flex; flex-direction: column; gap: 1rem; }
+.reservaForm {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
 
-.field { display: flex; flex-direction: column; gap: 0.35rem; }
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
 
 .label {
   font-size: 0.65rem;
@@ -147,7 +156,9 @@
   color-scheme: dark;
 }
 
-.input:focus { border-color: var(--gold-dark); }
+.input:focus {
+  border-color: var(--gold-dark);
+}
 
 .error {
   font-size: 0.8rem;
@@ -180,4 +191,6 @@
   transition: var(--transition);
 }
 
-.btnSubmit:hover { background: var(--gold-light); }
+.btnSubmit:hover {
+  background: var(--gold-light);
+}

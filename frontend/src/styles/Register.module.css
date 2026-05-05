@@ -1,46 +1,46 @@
-.page {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 5rem 2rem 3rem;
-  position: relative;
+.page { 
+  min-height: 100vh; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  padding: 5rem 2rem 3rem; 
+  position: relative; 
 }
 
 .ambient {
-  position: absolute;
-  width: 600px;
-  height: 600px;
+  position: absolute; 
+  width: 600px; 
+  height: 600px; 
   border-radius: 50%;
   background: radial-gradient(circle, rgba(201, 168, 76, 0.05) 0%, transparent 70%);
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  top: 50%; 
+  left: 50%; 
+  transform: translate(-50%, -50%); 
   pointer-events: none;
 }
 
 .card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
+  background: var(--bg-card); 
+  border: 1px solid var(--border); 
   border-radius: var(--radius-lg);
-  padding: 2.5rem 3rem;
-  width: 100%;
+  padding: 2.5rem 3rem; 
+  width: 100%; 
   max-width: 480px;
-  animation: fadeUp 0.5s ease;
+  animation: fadeUp 0.5s ease; 
   box-shadow: var(--shadow-lg);
 }
 
-.header {
-  text-align: center;
-  margin-bottom: 2rem;
+.header { 
+  text-align: center; 
+  margin-bottom: 2rem; 
 }
 
-.eyebrow {
-  font-size: 0.65rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--gold);
-  margin-bottom: 0.5rem;
+.eyebrow { 
+  font-size: 0.65rem; 
+  letter-spacing: 0.2em; 
+  text-transform: uppercase; 
+  color: var(--gold); 
+  margin-bottom: 0.5rem; 
 }
 
 .title {
@@ -114,8 +114,14 @@
   transition: var(--transition);
 }
 
-.btn:hover:not(:disabled) { background: var(--gold-light); }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn:hover:not(:disabled) {
+  background: var(--gold-light);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 
 .login {
   margin-top: 1.5rem;
@@ -124,5 +130,11 @@
   color: var(--text-muted);
 }
 
-.link { color: var(--gold); transition: var(--transition); }
-.link:hover { color: var(--gold-light); }
+.link {
+  color: var(--gold);
+  transition: var(--transition);
+}
+
+.link:hover {
+  color: var(--gold-light);
+}

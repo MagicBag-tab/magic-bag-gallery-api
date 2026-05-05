@@ -1,14 +1,11 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { registerCliente } from '../../services/api';
+import { registerCliente } from '../../api/api';
 import { useAuth } from '../../context/AuthContext';
 import styles from './Register.module.css';
 
 export default function Register() {
-  const [form, setForm] = useState({
-    nombre: '', apellido: '', correo_electronico: '',
-    telefono: '', contrasena: '', tipo_cliente: 'regular'
-  });
+  const [form, setForm] = useState({ nombre: '', apellido: '', correo_electronico: '', telefono: '', contrasena: '', tipo_cliente: 'regular' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { loginUser } = useAuth();
@@ -63,9 +60,7 @@ export default function Register() {
             <label className={styles.label}>Contraseña</label>
             <input className={styles.input} type="password" name="contrasena" value={form.contrasena} onChange={handleChange} required />
           </div>
-
           {error && <p className={styles.error}>{error}</p>}
-
           <button className={styles.btn} type="submit" disabled={loading}>
             {loading ? 'Registrando...' : 'Crear cuenta'}
           </button>

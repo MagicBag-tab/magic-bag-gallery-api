@@ -3,7 +3,7 @@ import {
   getReporteVentasPorMes, getReporteTopArtistas,
   getReporteColeccionesValor, getReporteTecnicasPopulares,
   exportVentasCSV, exportPinturasCSV, exportArtistasCSV
-} from '../../services/api';
+} from '../../api/api';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid } from 'recharts';
 import Loader from '../../components/Loader/Loader';
 import styles from './Reports.module.css';
@@ -124,13 +124,7 @@ export default function Reports() {
         <div className={styles.tableWrapper}>
           <table className={styles.table}>
             <thead>
-              <tr>
-                <th>#</th>
-                <th>Artista</th>
-                <th>Nacionalidad</th>
-                <th>Ventas</th>
-                <th>Ingresos</th>
-              </tr>
+              <tr><th>#</th><th>Artista</th><th>Nacionalidad</th><th>Ventas</th><th>Ingresos</th></tr>
             </thead>
             <tbody>
               {topArtistas.map(a => (

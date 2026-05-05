@@ -80,7 +80,9 @@
   color: var(--gold);
 }
 
-.info { flex: 1; }
+.info {
+  flex: 1;
+}
 
 .name {
   font-family: var(--font-display);
@@ -104,7 +106,6 @@
   font-size: 1rem;
 }
 
-/* Detail */
 .detail {
   display: flex;
   flex-direction: column;

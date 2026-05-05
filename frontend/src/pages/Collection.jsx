@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getColecciones } from '../../services/api';
+import { getColecciones, getColeccion } from '../../api/api';
 import Loader from '../../components/Loader/Loader';
 import Modal from '../../components/Modal/Modal';
 import styles from './Collections.module.css';
@@ -13,6 +13,15 @@ export default function Collections() {
     getColecciones().then(setColecciones).finally(() => setLoading(false));
   }, []);
 
+  const handleSelect = async (c) => {
+    try {
+      const detail = await getColeccion(c.id_coleccion);
+      setSelected(detail);
+    } catch {
+      setSelected(c);
+    }
+  };
+
   return (
     <div className={styles.page}>
       <div className={styles.hero}>
@@ -24,12 +33,7 @@ export default function Collections() {
       {loading ? <Loader fullPage /> : (
         <div className={styles.grid}>
           {colecciones.map((c, i) => (
-            <article
-              key={c.id_coleccion}
-              className={styles.card}
-              style={{ animationDelay: `${i * 0.07}s` }}
-              onClick={() => setSelected(c)}
-            >
+            <article key={c.id_coleccion} className={styles.card} style={{ animationDelay: `${i * 0.07}s` }} onClick={() => handleSelect(c)}>
               <div className={styles.cardTop}>
                 {c.exclusiva && <span className={styles.badge}>Exclusiva</span>}
               </div>
@@ -54,9 +58,7 @@ export default function Collections() {
             {selected.pinturas?.length > 0 && (
               <div className={styles.detailSection}>
                 <p className={styles.detailLabel}>Obras en esta colección</p>
-                <ul className={styles.list}>
-                  {selected.pinturas.map(p => <li key={p}>{p}</li>)}
-                </ul>
+                <ul className={styles.list}>{selected.pinturas.map(p => <li key={p}>{p}</li>)}</ul>
               </div>
             )}
           </div>

@@ -1,8 +1,6 @@
 .navbar {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
+  top: 0; left: 0; right: 0;
   z-index: 100;
   height: 64px;
   display: flex;
@@ -23,10 +21,7 @@
   flex-shrink: 0;
 }
 
-.logo span {
-  color: var(--text-secondary);
-  font-style: italic;
-}
+.logo span { color: var(--text-secondary); font-style: italic; }
 
 .nav {
   display: flex;
@@ -51,33 +46,17 @@
   content: '';
   position: absolute;
   bottom: -2px;
-  left: 50%;
-  right: 50%;
+  left: 50%; right: 50%;
   height: 1px;
   background: var(--gold);
   transition: var(--transition);
 }
 
-.navLink:hover {
-  color: var(--text-primary);
-}
+.navLink:hover { color: var(--text-primary); }
+.navLink:hover::after, .navLink.active::after { left: 0.85rem; right: 0.85rem; }
+.navLink.active { color: var(--gold-light); }
 
-.navLink:hover::after,
-.navLink.active::after {
-  left: 0.85rem;
-  right: 0.85rem;
-}
-
-.navLink.active {
-  color: var(--gold-light);
-}
-
-.actions {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex-shrink: 0;
-}
+.actions { display: flex; align-items: center; gap: 0.75rem; flex-shrink: 0; }
 
 .badge {
   font-size: 0.65rem;
@@ -101,10 +80,7 @@
   transition: var(--transition);
 }
 
-.btnOutline:hover {
-  color: var(--text-primary);
-  border-color: var(--text-muted);
-}
+.btnOutline:hover { color: var(--text-primary); border-color: var(--text-muted); }
 
 .btnGold {
   font-size: 0.7rem;
@@ -119,10 +95,7 @@
   font-weight: 600;
 }
 
-.btnGold:hover {
-  background: var(--gold-light);
-  border-color: var(--gold-light);
-}
+.btnGold:hover { background: var(--gold-light); border-color: var(--gold-light); }
 
 @media (max-width: 768px) {
   .nav { display: none; }

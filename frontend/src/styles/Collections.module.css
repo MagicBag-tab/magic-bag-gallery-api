@@ -98,8 +98,11 @@
   border-top: 1px solid var(--border-subtle);
 }
 
-/* Detail */
-.detail { display: flex; flex-direction: column; gap: 0.75rem; }
+.detail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
 
 .detailBadge {
   display: inline-block;

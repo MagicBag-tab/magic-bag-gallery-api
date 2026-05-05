@@ -7,7 +7,7 @@ import {
   getVentas, deleteVenta,
   getUsuarios, deleteUsuario,
   getTours, deleteTour
-} from '../../services/api';
+} from '../../api/api';
 import Modal from '../../components/Modal/Modal';
 import Loader from '../../components/Loader/Loader';
 import styles from './Admin.module.css';
@@ -18,7 +18,7 @@ export default function Admin() {
   const [tab, setTab] = useState('Pinturas');
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [modal, setModal] = useState(null); // { type: 'create'|'edit', item? }
+  const [modal, setModal] = useState(null);
   const [form, setForm] = useState({});
   const [msg, setMsg] = useState('');
 
@@ -27,11 +27,11 @@ export default function Admin() {
     try {
       const fetchers = {
         Pinturas: getPinturas, Artistas: getArtistas, Colecciones: getColecciones,
-        Técnicas: getTecnicas, Ventas: getVentas, Tours: getTours, Usuarios: getUsuarios
+        'Técnicas': getTecnicas, Ventas: getVentas, Tours: getTours, Usuarios: getUsuarios
       };
       const result = await fetchers[tab]();
       setData(result || []);
-    } catch (e) {
+    } catch {
       setData([]);
     } finally {
       setLoading(false);
@@ -45,7 +45,7 @@ export default function Admin() {
     try {
       const deleters = {
         Pinturas: deletePintura, Artistas: deleteArtista, Colecciones: deleteColeccion,
-        Técnicas: deleteTecnica, Ventas: deleteVenta, Tours: deleteTour, Usuarios: deleteUsuario
+        'Técnicas': deleteTecnica, Ventas: deleteVenta, Tours: deleteTour, Usuarios: deleteUsuario
       };
       await deleters[tab](id);
       fetchData();
@@ -56,7 +56,6 @@ export default function Admin() {
 
   const openCreate = () => { setForm({}); setModal({ type: 'create' }); setMsg(''); };
   const openEdit = (item) => { setForm(item); setModal({ type: 'edit', item }); setMsg(''); };
-
   const handleFormChange = (e) => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
 
   const handleSave = async (e) => {
@@ -67,8 +66,9 @@ export default function Admin() {
         if (modal.type === 'create') await createArtista(form);
         else await updateArtista(modal.item.id_artista, form);
       } else if (tab === 'Colecciones') {
-        if (modal.type === 'create') await createColeccion({ ...form, exclusiva: form.exclusiva === 'true' });
-        else await updateColeccion(modal.item.id_coleccion, { ...form, exclusiva: form.exclusiva === 'true' });
+        const payload = { ...form, exclusiva: form.exclusiva === 'true' };
+        if (modal.type === 'create') await createColeccion(payload);
+        else await updateColeccion(modal.item.id_coleccion, payload);
       } else if (tab === 'Técnicas') {
         if (modal.type === 'create') await createTecnica(form);
         else await updateTecnica(modal.item.id_tecnica, form);
@@ -81,7 +81,7 @@ export default function Admin() {
   };
 
   const getIdField = (item) => {
-    const map = { Pinturas: 'id_pintura', Artistas: 'id_artista', Colecciones: 'id_coleccion', Técnicas: 'id_tecnica', Ventas: 'id_venta', Tours: 'id_tour', Usuarios: 'id_usuario' };
+    const map = { Pinturas: 'id_pintura', Artistas: 'id_artista', Colecciones: 'id_coleccion', 'Técnicas': 'id_tecnica', Ventas: 'id_venta', Tours: 'id_tour', Usuarios: 'id_usuario' };
     return item[map[tab]];
   };
 
@@ -153,30 +153,20 @@ export default function Admin() {
   return (
     <div className={styles.page}>
       <div className={styles.header}>
-        <div>
-          <p className={styles.eyebrow}>Panel de administración</p>
-          <h1 className={styles.title}>Gestión de contenido</h1>
-        </div>
+        <p className={styles.eyebrow}>Panel de administración</p>
+        <h1 className={styles.title}>Gestión de contenido</h1>
       </div>
 
       <div className={styles.tabs}>
         {TABS.map(t => (
-          <button
-            key={t}
-            className={`${styles.tab} ${tab === t ? styles.active : ''}`}
-            onClick={() => setTab(t)}
-          >
-            {t}
-          </button>
+          <button key={t} className={`${styles.tab} ${tab === t ? styles.active : ''}`} onClick={() => setTab(t)}>{t}</button>
         ))}
       </div>
 
       <div className={styles.section}>
         <div className={styles.sectionHeader}>
           <h2 className={styles.sectionTitle}>{tab}</h2>
-          {canCreate && (
-            <button className={styles.btnCreate} onClick={openCreate}>+ Nuevo</button>
-          )}
+          {canCreate && <button className={styles.btnCreate} onClick={openCreate}>+ Nuevo</button>}
         </div>
 
         {msg && <p className={styles.error}>{msg}</p>}
@@ -197,16 +187,12 @@ export default function Admin() {
                     <td className={styles.idCell}>{getIdField(item)}</td>
                     {renderRow(item)}
                     <td className={styles.actions}>
-                      {canEdit && (
-                        <button className={styles.btnEdit} onClick={() => openEdit(item)}>Editar</button>
-                      )}
+                      {canEdit && <button className={styles.btnEdit} onClick={() => openEdit(item)}>Editar</button>}
                       <button className={styles.btnDelete} onClick={() => handleDelete(getIdField(item))}>Eliminar</button>
                     </td>
                   </tr>
                 ))}
-                {data.length === 0 && (
-                  <tr><td colSpan={20} className={styles.empty}>Sin registros</td></tr>
-                )}
+                {data.length === 0 && <tr><td colSpan={20} className={styles.empty}>Sin registros</td></tr>}
               </tbody>
             </table>
           </div>
@@ -214,10 +200,7 @@ export default function Admin() {
       </div>
 
       {modal && (
-        <Modal
-          title={`${modal.type === 'create' ? 'Crear' : 'Editar'} ${tab.slice(0, -1)}`}
-          onClose={() => setModal(null)}
-        >
+        <Modal title={`${modal.type === 'create' ? 'Crear' : 'Editar'} ${tab.slice(0, -1)}`} onClose={() => setModal(null)}>
           <form onSubmit={handleSave} className={styles.form}>
             {renderForm()}
             {msg && <p className={styles.error}>{msg}</p>}

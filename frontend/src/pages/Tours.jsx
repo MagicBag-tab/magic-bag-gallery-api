@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getTours, createReserva } from '../../services/api';
+import { getTours, createReserva } from '../../api/api';
 import { useAuth } from '../../context/AuthContext';
 import Loader from '../../components/Loader/Loader';
 import Modal from '../../components/Modal/Modal';
@@ -39,11 +39,7 @@ export default function Tours() {
       {loading ? <Loader fullPage /> : (
         <div className={styles.grid}>
           {tours.map((t, i) => (
-            <article
-              key={t.id_tour}
-              className={styles.card}
-              style={{ animationDelay: `${i * 0.05}s` }}
-            >
+            <article key={t.id_tour} className={styles.card} style={{ animationDelay: `${i * 0.05}s` }}>
               <div className={styles.cardHeader}>
                 <span className={styles.price}>Q {Number(t.precio).toLocaleString()}</span>
                 <span className={styles.horario}>{t.horario}</span>
@@ -55,7 +51,7 @@ export default function Tours() {
                 <span>👤 {t.nombre_guia}</span>
               </div>
               {isAuthenticated && (
-                <button className={styles.btnReserva} onClick={() => { setSelected(t); setReservaMsg(''); }}>
+                <button className={styles.btnReserva} onClick={() => { setSelected(t); setReservaMsg(''); setReservaForm({ id_cliente: '', fecha_reserva: '' }); }}>
                   Reservar
                 </button>
               )}
@@ -69,29 +65,14 @@ export default function Tours() {
           <form onSubmit={handleReserva} className={styles.reservaForm}>
             <div className={styles.field}>
               <label className={styles.label}>ID de Cliente</label>
-              <input
-                className={styles.input}
-                type="number"
-                value={reservaForm.id_cliente}
-                onChange={e => setReservaForm(f => ({ ...f, id_cliente: e.target.value }))}
-                placeholder="Ej: 1"
-                required
-              />
+              <input className={styles.input} type="number" value={reservaForm.id_cliente} onChange={e => setReservaForm(f => ({ ...f, id_cliente: e.target.value }))} placeholder="Ej: 1" required />
             </div>
             <div className={styles.field}>
               <label className={styles.label}>Fecha de reserva</label>
-              <input
-                className={styles.input}
-                type="date"
-                value={reservaForm.fecha_reserva}
-                onChange={e => setReservaForm(f => ({ ...f, fecha_reserva: e.target.value }))}
-                required
-              />
+              <input className={styles.input} type="date" value={reservaForm.fecha_reserva} onChange={e => setReservaForm(f => ({ ...f, fecha_reserva: e.target.value }))} required />
             </div>
             {reservaMsg && (
-              <p className={reservaMsg.startsWith('Error') ? styles.error : styles.success}>
-                {reservaMsg}
-              </p>
+              <p className={reservaMsg.startsWith('Error') ? styles.error : styles.success}>{reservaMsg}</p>
             )}
             <button className={styles.btnSubmit} type="submit">Confirmar reserva</button>
           </form>
