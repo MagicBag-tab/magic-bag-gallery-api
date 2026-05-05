@@ -31,7 +31,7 @@ La base de datos se inicializa automáticamente con el DDL y datos de prueba.
 |-------------------|---------------------|
 | `POSTGRES_USER`   | `proy2`             |
 | `POSTGRES_PASSWORD` | `secret`          |
-| `POSTGRES_DB`     | `magic_bag_gallery` |
+| `POSTGRES_DB`     | `proy2db`           |
 
 ---
 
