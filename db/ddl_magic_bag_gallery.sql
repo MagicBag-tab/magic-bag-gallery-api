@@ -172,3 +172,75 @@ CREATE INDEX idx_envio_venta
 -- Filtrar pinturas por colección
 CREATE INDEX idx_pintura_coleccion
     ON pintura(id_coleccion);
+
+-- Vistas--
+
+-- Reporte completo de pinturas con artista, colección y técnicas
+CREATE OR REPLACE VIEW vista_pinturas_completa AS
+SELECT
+    p.id_pintura,
+    p.titulo,
+    p.descripcion,
+    p.precio,
+    p.fecha_creacion,
+    p.exclusiva,
+    p.imagen_path,
+    p.imagen_tipo,
+    p.imagen_nombre,
+    a.nombre_completo   AS artista,
+    a.nacionalidad      AS nacionalidad_artista,
+    COALESCE(c.nombre, 'Sin colección') AS coleccion,
+    c.exclusiva         AS coleccion_exclusiva,
+    STRING_AGG(t.nombre, ', ' ORDER BY t.nombre) AS tecnicas
+FROM pintura p
+JOIN artista a ON p.id_artista = a.id_artista
+LEFT JOIN coleccion c ON p.id_coleccion = c.id_coleccion
+LEFT JOIN pintura_tecnica pt ON p.id_pintura = pt.id_pintura
+LEFT JOIN tecnica t ON pt.id_tecnica = t.id_tecnica
+GROUP BY
+    p.id_pintura, p.titulo, p.descripcion, p.precio,
+    p.fecha_creacion, p.exclusiva, p.imagen_path, p.imagen_tipo, p.imagen_nombre,
+    a.nombre_completo, a.nacionalidad,
+    c.nombre, c.exclusiva;
+
+-- Reporte de ventas con cliente y empleado
+CREATE OR REPLACE VIEW vista_ventas_detalle AS
+SELECT
+    v.id_venta,
+    v.fecha_venta,
+    v.precio           AS total_venta,
+    uc.nombre || ' ' || uc.apellido AS cliente,
+    uc.correo_electronico           AS correo_cliente,
+    cl.tipo_cliente,
+    ue.nombre || ' ' || ue.apellido AS empleado,
+    ue.correo_electronico           AS correo_empleado,
+    COUNT(dv.id_detalle_venta)      AS cantidad_items
+FROM venta v
+JOIN cliente cl  ON v.id_cliente  = cl.id_cliente
+JOIN usuario uc  ON cl.id_usuario = uc.id_usuario
+JOIN empleado em ON v.id_empleado = em.id_empleado
+JOIN usuario ue  ON em.id_usuario = ue.id_usuario
+LEFT JOIN detalle_venta dv ON v.id_venta = dv.id_venta
+GROUP BY
+    v.id_venta, v.fecha_venta, v.precio,
+    uc.nombre, uc.apellido, uc.correo_electronico, cl.tipo_cliente,
+    ue.nombre, ue.apellido, ue.correo_electronico;
+
+-- Resumen de artistas con totales
+CREATE OR REPLACE VIEW vista_artistas_resumen AS
+SELECT
+    a.id_artista,
+    a.nombre_completo,
+    a.nacionalidad,
+    ue.nombre || ' ' || ue.apellido AS reclutador,
+    COUNT(DISTINCT p.id_pintura)    AS total_pinturas,
+    COUNT(DISTINCT p.id_coleccion)  AS total_colecciones,
+    COALESCE(SUM(p.precio), 0)      AS valor_total_obra,
+    COALESCE(AVG(p.precio), 0)      AS precio_promedio
+FROM artista a
+JOIN empleado em ON a.id_reclutador = em.id_empleado
+JOIN usuario ue  ON em.id_usuario   = ue.id_usuario
+LEFT JOIN pintura p ON a.id_artista = p.id_artista
+GROUP BY
+    a.id_artista, a.nombre_completo, a.nacionalidad,
+    ue.nombre, ue.apellido;

@@ -23,7 +23,6 @@ func main() {
 	handlers.SetDB(db)
 
 	router := setupRouter()
-
 	handler := corsMiddleware()(router)
 
 	log.Println("Servidor iniciado en http://localhost:8888")
@@ -36,7 +35,6 @@ func loadDatabase() {
 	if err := loadEnv(); err != nil {
 		log.Fatalf("Error al cargar variables de entorno: %v", err)
 	}
-
 	if err := connectDB(); err != nil {
 		log.Fatalf("Error al conectar a la base de datos: %v", err)
 	}
@@ -51,14 +49,21 @@ func loadEnv() error {
 
 func connectDB() error {
 	var err error
-	db, err = sql.Open("postgres", fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("POSTGRES_USER"), os.Getenv("POSTGRES_PASSWORD"), os.Getenv("POSTGRES_DB")))
+	db, err = sql.Open("postgres", fmt.Sprintf(
+		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		os.Getenv("DB_HOST"),
+		os.Getenv("DB_PORT"),
+		os.Getenv("POSTGRES_USER"),
+		os.Getenv("POSTGRES_PASSWORD"),
+		os.Getenv("POSTGRES_DB"),
+	))
 	if err != nil {
 		return fmt.Errorf("error al conectar a la base de datos: %v", err)
 	}
 	if err = db.Ping(); err != nil {
 		return fmt.Errorf("error al verificar conexión a la base de datos: %v", err)
 	}
+	log.Println("✓ Conectado a PostgreSQL")
 	return nil
 }
 
@@ -70,15 +75,48 @@ func setupRouter() http.Handler {
 
 	router.HandleFunc("/api/pinturas", handlers.GetPinturasHandler).Methods("GET")
 	router.HandleFunc("/api/pinturas/{id}", handlers.GetPinturaByIDHandler).Methods("GET")
+	router.HandleFunc("/api/pinturas/artista/{id_artista}", handlers.GetPinturasByArtistaHandler).Methods("GET")
+	router.HandleFunc("/api/pinturas/coleccion/{id_coleccion}", handlers.GetPinturasByColeccionHandler).Methods("GET")
+	router.HandleFunc("/api/pinturas/tecnica/{id_tecnica}", handlers.GetPinturasByTecnicaHandler).Methods("GET")
+
 	router.HandleFunc("/api/artistas", handlers.GetArtistasHandler).Methods("GET")
 	router.HandleFunc("/api/artistas/{id}", handlers.GetArtistaByIDHandler).Methods("GET")
+
 	router.HandleFunc("/api/colecciones", handlers.GetColeccionesHandler).Methods("GET")
 	router.HandleFunc("/api/colecciones/{id}", handlers.GetColeccionByIDHandler).Methods("GET")
+
 	router.HandleFunc("/api/tecnicas", handlers.GetTecnicasHandler).Methods("GET")
 	router.HandleFunc("/api/tecnicas/{id}", handlers.GetTecnicaByIDHandler).Methods("GET")
 
+	router.HandleFunc("/api/tours", handlers.GetToursHandler).Methods("GET")
+	router.HandleFunc("/api/tours/{id}", handlers.GetTourByIDHandler).Methods("GET")
+
+	router.HandleFunc("/api/reportes/pinturas-completo", handlers.ReportePinturasCompletoHandler).Methods("GET")
+	router.HandleFunc("/api/reportes/ventas-detalle", handlers.ReporteVentasDetalleHandler).Methods("GET")
+	router.HandleFunc("/api/reportes/artistas-resumen", handlers.ReporteArtistasResumenHandler).Methods("GET")
+
+	router.HandleFunc("/api/reportes/artistas-con-ventas", handlers.ReporteArtistasConVentasHandler).Methods("GET")
+	router.HandleFunc("/api/reportes/clientes-vip-compradores", handlers.ReporteClientesVIPCompradoresHandler).Methods("GET")
+
+	router.HandleFunc("/api/reportes/ventas-por-mes", handlers.ReporteVentasPorMesHandler).Methods("GET")
+	router.HandleFunc("/api/reportes/ventas-por-mes/{anio}", handlers.ReporteVentasPorAnioHandler).Methods("GET")
+	router.HandleFunc("/api/reportes/tecnicas-populares", handlers.ReporteTecnicasPopularesHandler).Methods("GET")
+
+	router.HandleFunc("/api/reportes/top-artistas-ventas", handlers.ReporteTopArtistasPorVentasHandler).Methods("GET")
+	router.HandleFunc("/api/reportes/colecciones-valor", handlers.ReporteColeccionesValorHandler).Methods("GET")
+
+	router.HandleFunc("/api/exportar/ventas-csv", handlers.ExportarVentasCSVHandler).Methods("GET")
+	router.HandleFunc("/api/exportar/pinturas-csv", handlers.ExportarPinturasCSVHandler).Methods("GET")
+	router.HandleFunc("/api/exportar/artistas-csv", handlers.ExportarArtistasCSVHandler).Methods("GET")
+
 	api := router.PathPrefix("/api").Subrouter()
 	api.Use(middleware.JWTMiddleware)
+
+	api.HandleFunc("/reservas", handlers.GetReservasHandler).Methods("GET")
+	api.HandleFunc("/reservas/{id}", handlers.GetReservaByIDHandler).Methods("GET")
+	api.HandleFunc("/reservas", handlers.CreateReservaHandler).Methods("POST")
+	api.HandleFunc("/reservas/{id}", handlers.UpdateReservaHandler).Methods("PUT")
+	api.HandleFunc("/reservas/{id}", handlers.DeleteReservaHandler).Methods("DELETE")
 
 	admin := router.PathPrefix("/api").Subrouter()
 	admin.Use(middleware.JWTMiddleware)
@@ -108,40 +146,28 @@ func setupRouter() http.Handler {
 	admin.HandleFunc("/usuarios/{id}", handlers.UpdateUsuarioHandler).Methods("PUT")
 	admin.HandleFunc("/usuarios/{id}", handlers.DeleteUsuarioHandler).Methods("DELETE")
 
-	//router.HandleFunc("/api/pinturaByArtista/{id_artista}", handlers.GetPinturasByArtistaHandler).Methods("GET")
-	//router.HandleFunc("/api/pinturaByColeccion/{id_coleccion}", handlers.GetPinturasByColeccionHandler).Methods("GET")
-	//router.HandleFunc("/api/pinturaByTecnica/{id_tecnica}", handlers.GetPinturasByTecnicaHandler).Methods("GET")
+	admin.HandleFunc("/ventas", handlers.GetVentasHandler).Methods("GET")
+	admin.HandleFunc("/ventas/{id}", handlers.GetVentaByIDHandler).Methods("GET")
+	admin.HandleFunc("/ventas", handlers.CreateVentaHandler).Methods("POST")
+	admin.HandleFunc("/ventas/{id}", handlers.UpdateVentaHandler).Methods("PUT")
+	admin.HandleFunc("/ventas/{id}", handlers.DeleteVentaHandler).Methods("DELETE")
 
-	admin.HandleFunc("/api/ventas", handlers.GetVentasHandler).Methods("GET")
-	admin.HandleFunc("/api/ventas/{id}", handlers.GetVentaByIDHandler).Methods("GET")
-	admin.HandleFunc("/api/ventas", handlers.CreateVentaHandler).Methods("POST")
-	admin.HandleFunc("/api/ventas/{id}", handlers.UpdateVentaHandler).Methods("PUT")
-	admin.HandleFunc("/api/ventas/{id}", handlers.DeleteVentaHandler).Methods("DELETE")
-
-	admin.HandleFunc("/ventas/{id}/detalles", handlers.GetDetallesByVentaHandler).Methods("GET")
 	admin.HandleFunc("/detalles-venta", handlers.GetDetallesVentaHandler).Methods("GET")
 	admin.HandleFunc("/detalles-venta/{id}", handlers.GetDetalleVentaByIDHandler).Methods("GET")
+	admin.HandleFunc("/ventas/{id_venta}/detalles", handlers.GetDetallesByVentaHandler).Methods("GET")
 	admin.HandleFunc("/detalles-venta", handlers.CreateDetalleVentaHandler).Methods("POST")
 	admin.HandleFunc("/detalles-venta/{id}", handlers.UpdateDetalleVentaHandler).Methods("PUT")
 	admin.HandleFunc("/detalles-venta/{id}", handlers.DeleteDetalleVentaHandler).Methods("DELETE")
 
-	admin.HandleFunc("/api/envios", handlers.GetEnviosHandler).Methods("GET")
-	admin.HandleFunc("/api/envios/{id}", handlers.GetEnvioByIDHandler).Methods("GET")
-	admin.HandleFunc("/api/envios", handlers.CreateEnvioHandler).Methods("POST")
-	admin.HandleFunc("/api/envios/{id}", handlers.UpdateEnvioHandler).Methods("PUT")
-	admin.HandleFunc("/api/envios/{id}", handlers.DeleteEnvioHandler).Methods("DELETE")
+	admin.HandleFunc("/envios", handlers.GetEnviosHandler).Methods("GET")
+	admin.HandleFunc("/envios/{id}", handlers.GetEnvioByIDHandler).Methods("GET")
+	admin.HandleFunc("/envios", handlers.CreateEnvioHandler).Methods("POST")
+	admin.HandleFunc("/envios/{id}", handlers.UpdateEnvioHandler).Methods("PUT")
+	admin.HandleFunc("/envios/{id}", handlers.DeleteEnvioHandler).Methods("DELETE")
 
-	admin.HandleFunc("/api/tours", handlers.GetToursHandler).Methods("GET")
-	admin.HandleFunc("/api/tours/{id}", handlers.GetTourByIDHandler).Methods("GET")
-	admin.HandleFunc("/api/tours", handlers.CreateTourHandler).Methods("POST")
-	admin.HandleFunc("/api/tours/{id}", handlers.UpdateTourHandler).Methods("PUT")
-	admin.HandleFunc("/api/tours/{id}", handlers.DeleteTourHandler).Methods("DELETE")
-
-	admin.HandleFunc("/api/reservas", handlers.GetReservasHandler).Methods("GET")
-	admin.HandleFunc("/api/reservas/{id}", handlers.GetReservaByIDHandler).Methods("GET")
-	admin.HandleFunc("/api/reservas", handlers.CreateReservaHandler).Methods("POST")
-	admin.HandleFunc("/api/reservas/{id}", handlers.UpdateReservaHandler).Methods("PUT")
-	admin.HandleFunc("/api/reservas/{id}", handlers.DeleteReservaHandler).Methods("DELETE")
+	admin.HandleFunc("/tours", handlers.CreateTourHandler).Methods("POST")
+	admin.HandleFunc("/tours/{id}", handlers.UpdateTourHandler).Methods("PUT")
+	admin.HandleFunc("/tours/{id}", handlers.DeleteTourHandler).Methods("DELETE")
 
 	return router
 }
@@ -153,6 +179,7 @@ func corsMiddleware() func(http.Handler) http.Handler {
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 			if r.Method == "OPTIONS" {
+				w.WriteHeader(http.StatusOK)
 				return
 			}
 			next.ServeHTTP(w, r)
