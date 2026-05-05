@@ -1,0 +1,140 @@
+.page { 
+  min-height: 100vh; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  padding: 5rem 2rem 3rem; 
+  position: relative; 
+}
+
+.ambient {
+  position: absolute; 
+  width: 600px; 
+  height: 600px; 
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(201, 168, 76, 0.05) 0%, transparent 70%);
+  top: 50%; 
+  left: 50%; 
+  transform: translate(-50%, -50%); 
+  pointer-events: none;
+}
+
+.card {
+  background: var(--bg-card); 
+  border: 1px solid var(--border); 
+  border-radius: var(--radius-lg);
+  padding: 2.5rem 3rem; 
+  width: 100%; 
+  max-width: 480px;
+  animation: fadeUp 0.5s ease; 
+  box-shadow: var(--shadow-lg);
+}
+
+.header { 
+  text-align: center; 
+  margin-bottom: 2rem; 
+}
+
+.eyebrow { 
+  font-size: 0.65rem; 
+  letter-spacing: 0.2em; 
+  text-transform: uppercase; 
+  color: var(--gold); 
+  margin-bottom: 0.5rem; 
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 300;
+  color: var(--text-primary);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.label {
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.input {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0.7rem 1rem;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  transition: var(--transition);
+  outline: none;
+}
+
+.input:focus {
+  border-color: var(--gold-dark);
+  box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.08);
+}
+
+.error {
+  font-size: 0.8rem;
+  color: #e05c5c;
+  padding: 0.6rem 0.75rem;
+  background: rgba(224, 92, 92, 0.08);
+  border: 1px solid rgba(224, 92, 92, 0.2);
+  border-radius: var(--radius-sm);
+}
+
+.btn {
+  margin-top: 0.5rem;
+  background: var(--gold);
+  color: var(--bg-primary);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0.85rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 600;
+  transition: var(--transition);
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--gold-light);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.login {
+  margin-top: 1.5rem;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.link {
+  color: var(--gold);
+  transition: var(--transition);
+}
+
+.link:hover {
+  color: var(--gold-light);
+}

@@ -1,0 +1,24 @@
+.footer { margin-top: 6rem; padding: 0 2rem 2rem; }
+
+.divider {
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--border), transparent);
+  margin-bottom: 2rem;
+}
+
+.inner { display: flex; justify-content: space-between; align-items: center; }
+
+.brand {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 300;
+  letter-spacing: 0.15em;
+  color: var(--gold);
+}
+
+.copy {
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}

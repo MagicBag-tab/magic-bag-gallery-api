@@ -8,7 +8,7 @@ import Login from './pages/Login/Login';
 import Register from './pages/Register/Register';
 import Catalog from './pages/Catalog/Catalog';
 import Artists from './pages/Artists/Artists';
-import Collections from './pages/Collections/Collections';
+import Collections from './pages/Collection/Collection';
 import Tours from './pages/Tours/Tours';
 import Reports from './pages/Reports/Reports';
 import Admin from './pages/Admin/Admin';

@@ -378,8 +378,8 @@ func ReporteColeccionesValorHandler(w http.ResponseWriter, r *http.Request) {
 				c.exclusiva,
 				c.fecha_lanzamiento,
 				COUNT(p.id_pintura)  AS total_pinturas,
-				SUM(p.precio)        AS valor_total,
-				AVG(p.precio)        AS precio_promedio
+				COALESCE(SUM(p.precio), 0) AS valor_total,
+				COALESCE(AVG(p.precio), 0) AS precio_promedio
 			FROM coleccion c
 			LEFT JOIN pintura p ON c.id_coleccion = p.id_coleccion
 			GROUP BY c.id_coleccion, c.nombre, c.exclusiva, c.fecha_lanzamiento
