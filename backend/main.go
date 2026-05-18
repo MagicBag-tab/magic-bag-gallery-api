@@ -70,8 +70,9 @@ func connectDB() error {
 func setupRouter() http.Handler {
 	router := mux.NewRouter()
 
-	// Servir archivos estáticos (imágenes) desde la carpeta uploads
-	router.PathPrefix("/uploads/").Handler(http.StripPrefix("/uploads/", http.FileServer(http.Dir("./uploads"))))
+	router.PathPrefix("/uploads/").Handler(
+		http.StripPrefix("/uploads/", http.FileServer(http.Dir("./uploads"))),
+	)
 
 	router.HandleFunc("/api/login", handlers.LoginHandler).Methods("POST")
 	router.HandleFunc("/api/register/cliente", handlers.RegisterClienteHandler).Methods("POST")
@@ -97,14 +98,11 @@ func setupRouter() http.Handler {
 	router.HandleFunc("/api/reportes/pinturas-completo", handlers.ReportePinturasCompletoHandler).Methods("GET")
 	router.HandleFunc("/api/reportes/ventas-detalle", handlers.ReporteVentasDetalleHandler).Methods("GET")
 	router.HandleFunc("/api/reportes/artistas-resumen", handlers.ReporteArtistasResumenHandler).Methods("GET")
-
 	router.HandleFunc("/api/reportes/artistas-con-ventas", handlers.ReporteArtistasConVentasHandler).Methods("GET")
 	router.HandleFunc("/api/reportes/clientes-vip-compradores", handlers.ReporteClientesVIPCompradoresHandler).Methods("GET")
-
 	router.HandleFunc("/api/reportes/ventas-por-mes", handlers.ReporteVentasPorMesHandler).Methods("GET")
 	router.HandleFunc("/api/reportes/ventas-por-mes/{anio}", handlers.ReporteVentasPorAnioHandler).Methods("GET")
 	router.HandleFunc("/api/reportes/tecnicas-populares", handlers.ReporteTecnicasPopularesHandler).Methods("GET")
-
 	router.HandleFunc("/api/reportes/top-artistas-ventas", handlers.ReporteTopArtistasPorVentasHandler).Methods("GET")
 	router.HandleFunc("/api/reportes/colecciones-valor", handlers.ReporteColeccionesValorHandler).Methods("GET")
 
@@ -120,6 +118,10 @@ func setupRouter() http.Handler {
 	api.HandleFunc("/reservas", handlers.CreateReservaHandler).Methods("POST")
 	api.HandleFunc("/reservas/{id}", handlers.UpdateReservaHandler).Methods("PUT")
 	api.HandleFunc("/reservas/{id}", handlers.DeleteReservaHandler).Methods("DELETE")
+
+	api.HandleFunc("/me/tipo-empleado", handlers.GetMiTipoEmpleadoHandler).Methods("GET")
+	api.HandleFunc("/me/reservas", handlers.GetMisReservasHandler).Methods("GET")
+	api.HandleFunc("/me/ventas", handlers.GetMisVentasHandler).Methods("GET")
 
 	admin := router.PathPrefix("/api").Subrouter()
 	admin.Use(middleware.JWTMiddleware)
