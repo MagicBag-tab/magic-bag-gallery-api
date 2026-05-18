@@ -1,38 +1,40 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { getPinturas } from '../../api/api';
+import { useCatalogFilters } from '../../hooks/useCatalogFilters';
 import PaintingCard from '../../components/PaintingCard/PaintingCard';
 import Loader from '../../components/Loader/Loader';
 import Modal from '../../components/Modal/Modal';
+import { useState, useCallback } from 'react';
 import styles from './Catalog.module.css';
 
 export default function Catalog() {
-  const [pinturas, setPinturas] = useState([]);
-  const [filtered, setFiltered] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [filterExclusiva, setFilterExclusiva] = useState('all');
+  const {
+    filtered,
+    search,
+    filterExclusiva,
+    loading,
+    error,
+    setPinturas,
+    setError,
+    setSearch,
+    setFilterExclusiva,
+  } = useCatalogFilters();
+
   const [selected, setSelected] = useState(null);
 
   useEffect(() => {
     getPinturas()
-      .then(data => { setPinturas(data); setFiltered(data); })
-      .finally(() => setLoading(false));
+      .then((data) => setPinturas(data ?? []))
+      .catch(() => setError('No se pudo cargar el catálogo. Intenta de nuevo.'));
   }, []);
 
-  useEffect(() => {
-    let result = pinturas;
-    if (search) {
-      const q = search.toLowerCase();
-      result = result.filter(p =>
-        p.titulo.toLowerCase().includes(q) ||
-        p.artista.toLowerCase().includes(q) ||
-        p.coleccion?.toLowerCase().includes(q)
-      );
-    }
-    if (filterExclusiva === 'si') result = result.filter(p => p.exclusiva);
-    if (filterExclusiva === 'no') result = result.filter(p => !p.exclusiva);
-    setFiltered(result);
-  }, [search, filterExclusiva, pinturas]);
+  const handleSelect = useCallback((pintura) => {
+    setSelected(pintura);
+  }, []);
+
+  const handleClose = useCallback(() => {
+    setSelected(null);
+  }, []);
 
   return (
     <div className={styles.page}>
@@ -48,12 +50,18 @@ export default function Catalog() {
           type="text"
           placeholder="Buscar por título, artista o colección..."
           value={search}
-          onChange={e => setSearch(e.target.value)}
+          onChange={(e) => setSearch(e.target.value)}
+          aria-label="Buscar pinturas"
         />
         <div className={styles.filters}>
           <span className={styles.filterLabel}>Exclusividad:</span>
-          {['all', 'si', 'no'].map(v => (
-            <button key={v} className={`${styles.filterBtn} ${filterExclusiva === v ? styles.active : ''}`} onClick={() => setFilterExclusiva(v)}>
+          {['all', 'si', 'no'].map((v) => (
+            <button
+              key={v}
+              className={`${styles.filterBtn} ${filterExclusiva === v ? styles.active : ''}`}
+              onClick={() => setFilterExclusiva(v)}
+              aria-pressed={filterExclusiva === v}
+            >
               {v === 'all' ? 'Todas' : v === 'si' ? 'Exclusivas' : 'Estándar'}
             </button>
           ))}
@@ -61,28 +69,39 @@ export default function Catalog() {
         <span className={styles.count}>{filtered.length} obras</span>
       </div>
 
-      {loading ? <Loader fullPage /> : (
+      {error && (
+        <div className={styles.errorBox} role="alert">
+          <p>{error}</p>
+          <button onClick={() => window.location.reload()}>Reintentar</button>
+        </div>
+      )}
+
+      {loading ? (
+        <Loader fullPage />
+      ) : (
         <div className={styles.grid}>
           {filtered.map((p, i) => (
             <div key={p.id_pintura} style={{ animationDelay: `${i * 0.04}s` }}>
-              <PaintingCard pintura={p} onClick={setSelected} />
+              <PaintingCard pintura={p} onClick={handleSelect} />
             </div>
           ))}
-          {filtered.length === 0 && (
-            <div className={styles.empty}><p>No se encontraron obras con esos criterios.</p></div>
+          {filtered.length === 0 && !error && (
+            <div className={styles.empty}>
+              <p>No se encontraron obras con esos criterios.</p>
+            </div>
           )}
         </div>
       )}
 
       {selected && (
-        <Modal title="Detalle de obra" onClose={() => setSelected(null)}>
+        <Modal title="Detalle de obra" onClose={handleClose}>
           <div className={styles.detail}>
             <div className={styles.detailImageWrapper}>
               <div className={styles.detailImage}>
                 {selected.imagen_path ? (
-                  <img 
-                    src={`http://localhost:8888${selected.imagen_path}`} 
-                    alt={selected.titulo} 
+                  <img
+                    src={`http://localhost:8888${selected.imagen_path}`}
+                    alt={selected.titulo}
                     style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px' }}
                   />
                 ) : (
@@ -94,18 +113,24 @@ export default function Catalog() {
             <p className={styles.detailArtist}>{selected.artista}</p>
             <h2 className={styles.detailTitle}>{selected.titulo}</h2>
             <p className={styles.detailPrice}>Q {Number(selected.precio).toLocaleString()}</p>
-            {selected.coleccion && <p className={styles.detailCollection}>Colección: {selected.coleccion}</p>}
+            {selected.coleccion && (
+              <p className={styles.detailCollection}>Colección: {selected.coleccion}</p>
+            )}
             <p className={styles.detailDesc}>{selected.descripcion}</p>
             {selected.tecnicas?.length > 0 && (
               <div className={styles.detailTecnicas}>
                 <p className={styles.detailLabel}>Técnicas:</p>
                 <div className={styles.tags}>
-                  {selected.tecnicas.map(t => <span key={t} className={styles.tag}>{t}</span>)}
+                  {selected.tecnicas.map((t) => (
+                    <span key={t} className={styles.tag}>{t}</span>
+                  ))}
                 </div>
               </div>
             )}
             {selected.fecha_creacion && (
-              <p className={styles.detailMeta}>Fecha de creación: {new Date(selected.fecha_creacion).getFullYear()}</p>
+              <p className={styles.detailMeta}>
+                Fecha de creación: {new Date(selected.fecha_creacion).getFullYear()}
+              </p>
             )}
           </div>
         </Modal>
