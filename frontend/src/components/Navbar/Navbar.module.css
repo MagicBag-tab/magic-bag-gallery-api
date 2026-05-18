@@ -20,7 +20,6 @@
   color: var(--gold-light);
   flex-shrink: 0;
 }
-
 .logo span { color: var(--text-secondary); font-style: italic; }
 
 .nav {
@@ -41,7 +40,6 @@
   font-weight: 500;
   position: relative;
 }
-
 .navLink::after {
   content: '';
   position: absolute;
@@ -51,7 +49,6 @@
   background: var(--gold);
   transition: var(--transition);
 }
-
 .navLink:hover { color: var(--text-primary); }
 .navLink:hover::after, .navLink.active::after { left: 0.85rem; right: 0.85rem; }
 .navLink.active { color: var(--gold-light); }
@@ -79,7 +76,6 @@
   background: transparent;
   transition: var(--transition);
 }
-
 .btnOutline:hover { color: var(--text-primary); border-color: var(--text-muted); }
 
 .btnGold {
@@ -94,10 +90,82 @@
   transition: var(--transition);
   font-weight: 600;
 }
-
 .btnGold:hover { background: var(--gold-light); border-color: var(--gold-light); }
+
+.hamburger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 36px;
+  height: 36px;
+  padding: 6px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.bar {
+  display: block;
+  width: 100%;
+  height: 2px;
+  background: var(--text-secondary);
+  border-radius: 2px;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+
+.barTop  { transform: translateY(7px) rotate(45deg); }
+.barMid  { opacity: 0; }
+.barBot  { transform: translateY(-7px) rotate(-45deg); }
+
+.mobileMenu {
+  position: absolute;
+  top: 64px;
+  left: 0; right: 0;
+  background: rgba(10, 10, 10, 0.98);
+  border-bottom: 1px solid var(--border);
+  padding: 1.5rem 2rem;
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.mobileNav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.mobileNav .navLink {
+  font-size: 0.85rem;
+  padding: 0.65rem 0.5rem;
+}
+
+.mobileActions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.mobileActions .btnOutline,
+.mobileActions .btnGold {
+  width: 100%;
+  text-align: center;
+  padding: 0.65rem 1rem;
+  font-size: 0.75rem;
+}
 
 @media (max-width: 768px) {
   .nav { display: none; }
+  .actions { display: none; }
+  .hamburger { display: flex; }
   .logo { margin-right: auto; }
 }
