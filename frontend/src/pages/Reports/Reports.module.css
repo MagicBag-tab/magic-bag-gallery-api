@@ -1,65 +1,75 @@
 .page {
-  padding: 5rem 2rem 4rem;
-  max-width: 1400px;
+  width: min(100%, 1400px);
   margin: 0 auto;
+  padding: 6rem 2rem 4rem;
 }
 
 .hero {
-  text-align: center;
   padding: 4rem 0 3rem;
+  text-align: center;
 }
 
 .eyebrow {
+  margin-bottom: 1rem;
+  color: var(--purple);
   font-size: 0.65rem;
+  font-weight: 700;
   letter-spacing: 0.25em;
   text-transform: uppercase;
-  color: var(--gold);
-  margin-bottom: 1rem;
 }
 
 .heroTitle {
+  margin-bottom: 1rem;
+  color: var(--text-primary);
   font-family: var(--font-display);
   font-size: clamp(2.5rem, 5vw, 4rem);
   font-weight: 300;
-  color: var(--text-primary);
-  margin-bottom: 1rem;
+  line-height: 1.1;
 }
 
 .heroSub {
-  font-size: 0.9rem;
   color: var(--text-secondary);
+  font-size: 0.95rem;
 }
 
 .exports {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  margin-bottom: 2.5rem;
   flex-wrap: wrap;
+  margin-bottom: 2.5rem;
+  padding: 1rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-sm);
 }
 
 .exportsLabel {
+  color: var(--text-muted);
   font-size: 0.7rem;
+  font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--text-muted);
 }
 
 .exportBtn {
-  font-size: 0.65rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  padding: 0.4rem 0.9rem;
+  padding: 0.48rem 0.9rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
+  background: white;
   color: var(--text-secondary);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   transition: var(--transition);
 }
 
 .exportBtn:hover {
-  border-color: var(--gold-dark);
-  color: var(--gold);
-  background: var(--gold-muted);
+  border-color: var(--purple);
+  background: var(--purple-muted);
+  color: var(--purple);
 }
 
 .grid {
@@ -70,39 +80,44 @@
 }
 
 .chartCard {
-  background: var(--bg-card);
+  min-width: 0;
+  padding: 1.5rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  padding: 1.75rem;
+  background: var(--bg-card);
+  box-shadow: var(--shadow-sm);
 }
 
 .chartTitle {
-  font-family: var(--font-display);
-  font-size: 1.1rem;
-  font-weight: 400;
-  color: var(--text-primary);
   margin-bottom: 0.2rem;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 400;
 }
 
 .chartSub {
-  font-size: 0.7rem;
-  color: var(--text-muted);
   margin-bottom: 1.5rem;
+  color: var(--text-muted);
+  font-size: 0.72rem;
   letter-spacing: 0.04em;
 }
 
 .tooltip {
-  background: var(--bg-elevated);
+  padding: 0.65rem 0.9rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  padding: 0.6rem 1rem;
+  background: white;
+  box-shadow: var(--shadow-md);
+  color: var(--text-secondary);
   font-size: 0.8rem;
 }
 
 .tooltipLabel {
-  color: var(--gold);
   margin-bottom: 0.3rem;
+  color: var(--purple);
   font-size: 0.75rem;
+  font-weight: 700;
 }
 
 .tableSection {
@@ -110,43 +125,47 @@
 }
 
 .tableTitle {
-  font-family: var(--font-display);
-  font-size: 1.4rem;
-  font-weight: 400;
-  color: var(--text-primary);
   margin-bottom: 1.25rem;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: 1.45rem;
+  font-weight: 400;
 }
 
 .tableWrapper {
-  background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
   overflow: hidden;
   overflow-x: auto;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-sm);
+  -webkit-overflow-scrolling: touch;
 }
 
 .table {
   width: 100%;
+  min-width: 720px;
   border-collapse: collapse;
 }
 
 .table th {
-  padding: 0.75rem 1.25rem;
-  text-align: left;
-  font-size: 0.65rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--text-muted);
+  padding: 0.8rem 1.25rem;
   border-bottom: 1px solid var(--border-subtle);
   background: var(--bg-secondary);
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-align: left;
+  text-transform: uppercase;
   white-space: nowrap;
 }
 
 .table td {
-  padding: 0.85rem 1.25rem;
-  font-size: 0.85rem;
-  color: var(--text-secondary);
+  padding: 0.9rem 1.25rem;
   border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: 0.86rem;
 }
 
 .table tr:last-child td {
@@ -154,19 +173,19 @@
 }
 
 .table tr:hover td {
-  background: var(--bg-elevated);
+  background: var(--bg-secondary);
 }
 
 .pos {
+  color: var(--purple) !important;
   font-family: var(--font-display);
-  font-size: 1.1rem;
-  color: var(--gold) !important;
+  font-size: 1.2rem !important;
   font-weight: 400;
 }
 
 .gold {
-  color: var(--gold-light) !important;
-  font-weight: 500;
+  color: var(--purple) !important;
+  font-weight: 700;
 }
 
 .muted {
@@ -177,7 +196,24 @@
   text-align: center;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 768px) {
+  .page {
+    padding: 5rem 1rem 3rem;
+  }
+
+  .hero {
+    padding: 3rem 0 2rem;
+  }
+
+  .exports {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .exportBtn {
+    width: 100%;
+  }
+
   .grid {
     grid-template-columns: 1fr;
   }

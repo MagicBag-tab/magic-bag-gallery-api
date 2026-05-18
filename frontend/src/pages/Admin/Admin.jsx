@@ -35,10 +35,23 @@ export default function Admin() {
   const [modal,   setModal]   = useState(null);
   const [form,    setForm]    = useState({});
   const [msg,     setMsg]     = useState('');
+  const [usuarios, setUsuarios] = useState([]);
 
   useEffect(() => {
     if (!allowedTabs.includes(tab)) setTab(allowedTabs[0]);
   }, [allowedTabs, tab]);
+
+  const reclutadores = useMemo(
+    () => usuarios.filter(u => u.tipo_empleado === 'reclutador'),
+    [usuarios]
+  );
+
+  useEffect(() => {
+    if (!allowedTabs.includes('Artistas')) return;
+    getUsuarios()
+      .then((result) => setUsuarios(result || []))
+      .catch(() => setUsuarios([]));
+  }, [allowedTabs]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -83,7 +96,11 @@ export default function Admin() {
     }
   };
 
-  const openCreate = () => { setForm({}); setModal({ type: 'create' }); setMsg(''); };
+  const openCreate = () => {
+    setForm(tab === 'Artistas' && reclutadores.length === 1 ? { id_reclutador: reclutadores[0].id_empleado } : {});
+    setModal({ type: 'create' });
+    setMsg('');
+  };
   const openEdit   = (item) => { setForm(item); setModal({ type: 'edit', item }); setMsg(''); };
   const handleFormChange = (e) => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
 
@@ -99,7 +116,7 @@ export default function Admin() {
         Colecciones: 'id_coleccion',
         'Técnicas':  'id_tecnica',
       };
-      
+
       // Limpieza de campos para creación
       if (modal.type === 'create' && idKeys[tab]) {
         delete payload[idKeys[tab]];
@@ -107,7 +124,10 @@ export default function Admin() {
 
       if (tab === 'Artistas') {
         payload.id_reclutador = parseInt(payload.id_reclutador, 10);
-        
+        if (!payload.id_reclutador) {
+          throw new Error('Selecciona un reclutador');
+        }
+
         if (modal.type === 'create') await createArtista(payload);
         else await updateArtista(modal.item.id_artista, payload);
       } else if (tab === 'Colecciones') {
@@ -146,12 +166,12 @@ export default function Admin() {
   const renderRow = (item) => {
     switch (tab) {
       case 'Pinturas':    return <><td>{item.titulo}</td><td>{item.artista}</td><td>Q {Number(item.precio).toLocaleString()}</td><td>{item.exclusiva ? 'Sí' : 'No'}</td></>;
-      case 'Artistas':    return <><td>{item.nombre_completo}</td><td>{item.nacionalidad}</td></>;
+      case 'Artistas':    return <><td>{item.nombre_completo}</td><td>{item.nacionalidad}</td><td>{item.nombre_reclutador || item.id_reclutador}</td></>;
       case 'Colecciones': return <><td>{item.nombre}</td><td>{item.exclusiva ? 'Sí' : 'No'}</td><td>{item.fecha_lanzamiento}</td></>;
       case 'Técnicas':    return <><td>{item.nombre}</td><td className={styles.desc}>{item.descripcion}</td></>;
       case 'Ventas':      return <><td>{item.fecha_venta}</td><td>Q {Number(item.precio).toLocaleString()}</td><td>{item.id_cliente}</td></>;
       case 'Tours':       return <><td>{item.nombre}</td><td>{item.nombre_guia}</td><td>Q {Number(item.precio).toLocaleString()}</td><td>{item.fecha_inicio}</td></>;
-      case 'Reservas':    return <><td>{item.nombre_tour}</td><td>{item.id_cliente}</td><td>{item.fecha_reserva}</td></>;
+      case 'Reservas':    return <><td>{item.nombre_tour}</td><td>{item.nombre_cliente || item.id_cliente}</td><td>{item.fecha_reserva}</td></>;
       case 'Usuarios':    return <><td>{item.nombre} {item.apellido}</td><td>{item.correo_electronico}</td><td>{item.telefono}</td></>;
       default: return null;
     }
@@ -160,7 +180,7 @@ export default function Admin() {
   const renderHeaders = () => {
     switch (tab) {
       case 'Pinturas':    return ['Título', 'Artista', 'Precio', 'Exclusiva'];
-      case 'Artistas':    return ['Nombre', 'Nacionalidad'];
+      case 'Artistas':    return ['Nombre', 'Nacionalidad', 'Reclutador'];
       case 'Colecciones': return ['Nombre', 'Exclusiva', 'Lanzamiento'];
       case 'Técnicas':    return ['Nombre', 'Descripción'];
       case 'Ventas':      return ['Fecha', 'Total', 'Cliente'];
@@ -178,7 +198,20 @@ export default function Admin() {
           <>
             <div className={styles.field}><label className={styles.label}>Nombre completo</label><input className={styles.input} name="nombre_completo" value={form.nombre_completo || ''} onChange={handleFormChange} required /></div>
             <div className={styles.field}><label className={styles.label}>Nacionalidad</label><input className={styles.input} name="nacionalidad" value={form.nacionalidad || ''} onChange={handleFormChange} required /></div>
-            <div className={styles.field}><label className={styles.label}>ID Reclutador</label><input className={styles.input} type="number" name="id_reclutador" value={form.id_reclutador || ''} onChange={handleFormChange} required /></div>
+            <div className={styles.field}>
+              <label className={styles.label}>Reclutador</label>
+              <select className={styles.input} name="id_reclutador" value={form.id_reclutador || ''} onChange={handleFormChange} required>
+                <option value="">Selecciona un reclutador</option>
+                {reclutadores.map((reclutador) => (
+                  <option key={reclutador.id_empleado} value={reclutador.id_empleado}>
+                    {reclutador.nombre} {reclutador.apellido}
+                  </option>
+                ))}
+              </select>
+              {reclutadores.length === 0 && (
+                <p className={styles.helpText}>No hay empleados reclutadores disponibles.</p>
+              )}
+            </div>
           </>
         );
       case 'Colecciones':

@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import Navbar from './components/Navbar/Navbar';
 import Footer from './components/Footer/Footer';
@@ -14,6 +14,7 @@ import Reports    from './pages/Reports/Reports';
 import Admin      from './pages/Admin/Admin';
 import MiCuenta   from './pages/MiCuenta/MiCuenta';
 import NotFound   from './pages/NotFound/NotFound';
+import Landing    from './pages/Landing/Landing';
 
 export default function App() {
   return (
@@ -21,7 +22,7 @@ export default function App() {
       <BrowserRouter>
         <Navbar />
         <Routes>
-          <Route path="/"            element={<Navigate to="/catalogo" replace />} />
+          <Route path="/"            element={<Landing />} />
           <Route path="/login"       element={<Login />} />
           <Route path="/register"    element={<Register />} />
           <Route path="/catalogo"    element={<Catalog />} />

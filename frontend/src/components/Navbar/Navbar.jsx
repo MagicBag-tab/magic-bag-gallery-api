@@ -53,13 +53,13 @@ export default function Navbar() {
                 <span className={styles.nombreUsuario}>{nombre}</span>
               </span>
             )}
-            {isEmpleado && <span className={styles.badge}>Empleado</span>}
+            {isEmpleado && <span className={styles.badge}>Empleado</span>} {/* Mantener */}
             <button className={styles.btnOutline} onClick={handleLogout}>Salir</button>
           </>
         ) : (
           <>
             <button className={styles.btnOutline} onClick={() => navigate('/login')}>Iniciar sesión</button>
-            <button className={styles.btnGold}    onClick={() => navigate('/register')}>Registrarse</button>
+            <button className={styles.btnPrimary}    onClick={() => navigate('/register')}>Registrarse</button>
           </>
         )}
       </div>
@@ -99,8 +99,8 @@ export default function Navbar() {
             <button className={styles.btnOutline} onClick={handleLogout}>Cerrar sesión</button>
           ) : (
             <>
-              <button className={styles.btnOutline} onClick={() => { navigate('/login');    setMenuOpen(false); }}>Iniciar sesión</button>
-              <button className={styles.btnGold}    onClick={() => { navigate('/register'); setMenuOpen(false); }}>Registrarse</button>
+              <button className={styles.btnOutline} onClick={() => { navigate('/login'); setMenuOpen(false); }}>Iniciar sesión</button>
+              <button className={styles.btnPrimary} onClick={() => { navigate('/register'); setMenuOpen(false); }}>Registrarse</button>
             </>
           )}
         </div>

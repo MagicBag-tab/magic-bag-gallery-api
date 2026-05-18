@@ -57,9 +57,9 @@ export default function Reports() {
 
       <div className={styles.exports}>
         <p className={styles.exportsLabel}>Exportar datos:</p>
-        <a href={exportVentasCSV()} download className={styles.exportBtn}>Ventas CSV</a>
-        <a href={exportPinturasCSV()} download className={styles.exportBtn}>Pinturas CSV</a>
-        <a href={exportArtistasCSV()} download className={styles.exportBtn}>Artistas CSV</a>
+        <button onClick={() => exportVentasCSV()} className={styles.exportBtn}>Ventas CSV</button>
+        <button onClick={() => exportPinturasCSV()} className={styles.exportBtn}>Pinturas CSV</button>
+        <button onClick={() => exportArtistasCSV()} className={styles.exportBtn}>Artistas CSV</button>
       </div>
 
       <div className={styles.grid}>
@@ -68,11 +68,11 @@ export default function Reports() {
           <p className={styles.chartSub}>Total de ventas mensuales</p>
           <ResponsiveContainer width="100%" height={240}>
             <LineChart data={ventasMes}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-              <XAxis dataKey="mes" tick={{ fill: '#a09880', fontSize: 11 }} />
-              <YAxis tick={{ fill: '#a09880', fontSize: 11 }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(124,58,237,0.14)" />
+              <XAxis dataKey="mes" tick={{ fill: '#4B4869', fontSize: 11 }} />
+              <YAxis tick={{ fill: '#4B4869', fontSize: 11 }} />
               <Tooltip content={<CustomTooltip />} />
-              <Line type="monotone" dataKey="ingresos_totales" name="Ingresos" stroke="#c9a84c" strokeWidth={2} dot={{ fill: '#c9a84c', r: 3 }} />
+              <Line type="monotone" dataKey="ingresos_totales" name="Ingresos" stroke="#7C3AED" strokeWidth={2} dot={{ fill: '#7C3AED', r: 3 }} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -82,10 +82,10 @@ export default function Reports() {
           <p className={styles.chartSub}>Ingresos generados por artista</p>
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={topArtistas} layout="vertical">
-              <XAxis type="number" tick={{ fill: '#a09880', fontSize: 11 }} />
-              <YAxis dataKey="nombre_completo" type="category" width={120} tick={{ fill: '#a09880', fontSize: 10 }} />
+              <XAxis type="number" tick={{ fill: '#4B4869', fontSize: 11 }} />
+              <YAxis dataKey="nombre_completo" type="category" width={120} tick={{ fill: '#4B4869', fontSize: 10 }} />
               <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="ingresos_totales" name="Ingresos" fill="#c9a84c" radius={[0, 2, 2, 0]} />
+              <Bar dataKey="ingresos_totales" name="Ingresos" fill="#7C3AED" radius={[0, 2, 2, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -95,11 +95,11 @@ export default function Reports() {
           <p className={styles.chartSub}>Valor total por colección</p>
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={colecciones}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-              <XAxis dataKey="nombre" tick={{ fill: '#a09880', fontSize: 10 }} />
-              <YAxis tick={{ fill: '#a09880', fontSize: 11 }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(124,58,237,0.14)" />
+              <XAxis dataKey="nombre" tick={{ fill: '#4B4869', fontSize: 10 }} />
+              <YAxis tick={{ fill: '#4B4869', fontSize: 11 }} />
               <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="valor_total" name="Valor total" fill="#9e7c2c" radius={[2, 2, 0, 0]} />
+              <Bar dataKey="valor_total" name="Valor total" fill="#5B21B6" radius={[2, 2, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -109,11 +109,11 @@ export default function Reports() {
           <p className={styles.chartSub}>Pinturas por técnica</p>
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={tecnicas}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-              <XAxis dataKey="tecnica" tick={{ fill: '#a09880', fontSize: 10 }} />
-              <YAxis tick={{ fill: '#a09880', fontSize: 11 }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(124,58,237,0.14)" />
+              <XAxis dataKey="tecnica" tick={{ fill: '#4B4869', fontSize: 10 }} />
+              <YAxis tick={{ fill: '#4B4869', fontSize: 11 }} />
               <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="total_pinturas" name="Pinturas" fill="#e2c97e" radius={[2, 2, 0, 0]} />
+              <Bar dataKey="total_pinturas" name="Pinturas" fill="#A78BFA" radius={[2, 2, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>

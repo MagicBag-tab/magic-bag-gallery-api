@@ -9,9 +9,9 @@ export default function Tours() {
   const [tours, setTours] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
-  const [reservaForm, setReservaForm] = useState({ id_cliente: '', fecha_reserva: '' });
+  const [reservaForm, setReservaForm] = useState({ fecha_reserva: '' });
   const [reservaMsg, setReservaMsg] = useState('');
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, nombre } = useAuth();
 
   useEffect(() => {
     getTours().then(setTours).finally(() => setLoading(false));
@@ -21,7 +21,7 @@ export default function Tours() {
     e.preventDefault();
     setReservaMsg('');
     try {
-      await createReserva({ ...reservaForm, id_tour: selected.id_tour, id_cliente: Number(reservaForm.id_cliente) });
+      await createReserva({ id_tour: selected.id_tour, fecha_reserva: reservaForm.fecha_reserva });
       setReservaMsg('¡Reserva creada exitosamente!');
     } catch (err) {
       setReservaMsg('Error: ' + err.message);
@@ -47,11 +47,18 @@ export default function Tours() {
               <h3 className={styles.cardName}>{t.nombre}</h3>
               <p className={styles.cardDesc}>{t.descripcion}</p>
               <div className={styles.cardMeta}>
-                <span>🗓 {new Date(t.fecha_inicio).toLocaleDateString('es-GT')}</span>
+                <span>Fecha {new Date(t.fecha_inicio).toLocaleDateString('es-GT')}</span>
                 <span>Guía {t.nombre_guia}</span>
               </div>
               {isAuthenticated && (
-                <button className={styles.btnReserva} onClick={() => { setSelected(t); setReservaMsg(''); setReservaForm({ id_cliente: '', fecha_reserva: '' }); }}>
+                <button
+                  className={styles.btnReserva}
+                  onClick={() => {
+                    setSelected(t);
+                    setReservaMsg('');
+                    setReservaForm({ fecha_reserva: '' });
+                  }}
+                >
                   Reservar
                 </button>
               )}
@@ -63,13 +70,19 @@ export default function Tours() {
       {selected && (
         <Modal title={`Reservar: ${selected.nombre}`} onClose={() => setSelected(null)}>
           <form onSubmit={handleReserva} className={styles.reservaForm}>
-            <div className={styles.field}>
-              <label className={styles.label}>ID de Cliente</label>
-              <input className={styles.input} type="number" value={reservaForm.id_cliente} onChange={e => setReservaForm(f => ({ ...f, id_cliente: e.target.value }))} placeholder="Ej: 1" required />
+            <div className={styles.reservaSummary}>
+              <span>Reserva para</span>
+              <strong>{nombre || 'tu cuenta'}</strong>
             </div>
             <div className={styles.field}>
               <label className={styles.label}>Fecha de reserva</label>
-              <input className={styles.input} type="date" value={reservaForm.fecha_reserva} onChange={e => setReservaForm(f => ({ ...f, fecha_reserva: e.target.value }))} required />
+              <input
+                className={styles.input}
+                type="date"
+                value={reservaForm.fecha_reserva}
+                onChange={e => setReservaForm(f => ({ ...f, fecha_reserva: e.target.value }))}
+                required
+              />
             </div>
             {reservaMsg && (
               <p className={reservaMsg.startsWith('Error') ? styles.error : styles.success}>{reservaMsg}</p>

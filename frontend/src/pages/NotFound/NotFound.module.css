@@ -1,35 +1,58 @@
 .container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 70vh;
-    text-align: center;
-    padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 70vh;
+  padding: 6rem 2rem 3rem;
+  background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-primary) 70%);
+  text-align: center;
 }
 
 .title {
-    font-size: 8rem;
-    margin: 0;
-    color: #c9a84c;
-    font-family: 'Playfair Display', serif;
+  margin: 0;
+  color: var(--purple);
+  font-family: var(--font-display);
+  font-size: clamp(5rem, 16vw, 9rem);
+  font-weight: 300;
+  line-height: 1;
 }
 
 .text {
-    font-size: 1.5rem;
-    margin-bottom: 0.5rem;
+  margin: 1rem 0 0.5rem;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  font-weight: 400;
 }
 
 .sub {
-    color: #a09880;
-    margin-bottom: 2rem;
+  max-width: 480px;
+  margin-bottom: 2rem;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
 }
 
 .link {
-    background-color: #c9a84c;
-    color: #1a1a1a;
-    padding: 0.8rem 2rem;
-    text-decoration: none;
-    font-weight: bold;
-    transition: opacity 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.78rem 1.4rem;
+  border: 1px solid var(--purple);
+  border-radius: var(--radius-sm);
+  background: var(--purple);
+  color: white;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: var(--transition);
+}
+
+.link:hover {
+  border-color: var(--purple-dark);
+  background: var(--purple-dark);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-2px);
 }

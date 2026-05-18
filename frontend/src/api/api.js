@@ -74,9 +74,26 @@ export const getReporteColeccionesValor  = () => request('/reportes/colecciones-
 export const getReporteVentasPorMes      = () => request('/reportes/ventas-por-mes',          { headers: getHeaders(true) });
 export const getReporteTecnicasPopulares = () => request('/reportes/tecnicas-populares',      { headers: getHeaders(true) });
 
-export const exportVentasCSV   = () => `${BASE}/exportar/ventas-csv`;
-export const exportPinturasCSV = () => `${BASE}/exportar/pinturas-csv`;
-export const exportArtistasCSV = () => `${BASE}/exportar/artistas-csv`;
+async function downloadCSV(path, filename) {
+  const token = localStorage.getItem('token');
+  const res = await fetch(`/api${path}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) throw new Error(`Error ${res.status}`);
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+export const exportVentasCSV   = () => downloadCSV('/exportar/ventas-csv',   'ventas_magic_bag_gallery.csv');
+export const exportPinturasCSV = () => downloadCSV('/exportar/pinturas-csv', 'catalogo_pinturas.csv');
+export const exportArtistasCSV = () => downloadCSV('/exportar/artistas-csv', 'artistas_resumen.csv');
 
 export const getMisReservas = () => request('/me/reservas', { headers: getHeaders(true) });
 export const getMisVentas   = () => request('/me/ventas',   { headers: getHeaders(true) });

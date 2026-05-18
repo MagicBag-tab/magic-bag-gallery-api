@@ -1,56 +1,89 @@
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(6px);
   z-index: 200;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 1rem;
+  background: rgba(30, 27, 46, 0.42);
+  backdrop-filter: blur(8px);
   animation: fadeIn 0.2s ease;
 }
 
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
 
 .modal {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
   width: 100%;
   max-width: 480px;
   max-height: 90vh;
   overflow-y: auto;
-  animation: slideUp 0.25s ease;
+  border: 1px solid var(--purple-border);
+  border-radius: var(--radius-md);
+  background: white;
   box-shadow: var(--shadow-lg);
+  animation: slideUp 0.25s ease;
 }
 
-.modal.wide { max-width: 700px; }
+.modal.wide,
+.wide {
+  max-width: 700px;
+}
 
 @keyframes slideUp {
   from { transform: translateY(20px); opacity: 0; }
-  to   { transform: translateY(0); opacity: 1; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1.5rem 1.75rem 1rem;
+  gap: 1rem;
+  padding: 1.35rem 1.6rem 1rem;
   border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-secondary);
 }
 
-.title { font-family: var(--font-display); font-size: 1.3rem; font-weight: 400; color: var(--gold-light); }
+.title {
+  color: var(--purple-dark);
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 400;
+  line-height: 1.2;
+}
 
 .close {
-  background: none;
-  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: white;
   color: var(--text-muted);
   font-size: 0.9rem;
-  padding: 0.25rem 0.5rem;
   transition: var(--transition);
-  border-radius: var(--radius-sm);
 }
 
-.close:hover { color: var(--text-primary); background: var(--bg-elevated); }
-.body { padding: 1.5rem 1.75rem; }
+.close:hover {
+  border-color: var(--purple-border);
+  background: var(--purple-muted);
+  color: var(--purple-dark);
+}
+
+.body {
+  padding: 1.5rem 1.6rem;
+}
+
+@media (max-width: 560px) {
+  .header,
+  .body {
+    padding-inline: 1.1rem;
+  }
+}

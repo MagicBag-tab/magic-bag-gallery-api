@@ -1,0 +1,498 @@
+.landingPage {
+  padding-top: 64px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.hero {
+  position: relative;
+  display: flex;
+  min-height: calc(88vh - 64px);
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 5rem 2rem;
+  text-align: center;
+  background: linear-gradient(135deg, #F7F5FF 0%, #FFFFFF 60%, #EDE9FE 100%);
+}
+
+.heroContent {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 820px);
+  animation: fadeUp 0.7s ease both;
+}
+
+.eyebrow {
+  margin-bottom: 1rem;
+  color: var(--purple);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+.heroTitle {
+  margin-bottom: 1.25rem;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 7vw, 6rem);
+  font-weight: 300;
+  line-height: 1.02;
+}
+
+.heroSub {
+  max-width: 650px;
+  margin: 0 auto 2.5rem;
+  color: var(--text-secondary);
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  line-height: 1.7;
+}
+
+.heroActions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.btnPrimary,
+.btnOutline,
+.btnWhite {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  padding: 0.8rem 1.55rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: var(--transition);
+}
+
+.btnPrimary {
+  border: 1px solid var(--purple);
+  background: var(--purple);
+  color: white;
+  box-shadow: var(--shadow-sm);
+}
+
+.btnPrimary:hover {
+  border-color: var(--purple-dark);
+  background: var(--purple-dark);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.btnOutline {
+  border: 1px solid var(--purple-border);
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--purple-dark);
+}
+
+.btnOutline:hover {
+  border-color: var(--purple);
+  background: var(--purple-muted);
+  color: var(--purple);
+  transform: translateY(-2px);
+}
+
+.heroShape {
+  position: absolute;
+  right: -3rem;
+  bottom: 1.5rem;
+  width: min(46vw, 520px);
+  height: auto;
+  fill: none;
+  stroke: rgba(124, 58, 237, 0.2);
+  stroke-width: 16;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.25rem;
+  width: min(100%, 1100px);
+  margin: 0 auto;
+  padding: 3.5rem 2rem 2rem;
+}
+
+.statCard {
+  padding: 1.75rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition);
+}
+
+.statCard:hover {
+  border-color: var(--purple-border);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-3px);
+}
+
+.statNumber {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--purple);
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 5vw, 3.5rem);
+  font-weight: 300;
+  line-height: 1;
+}
+
+.statLabel {
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.carouselSection {
+  padding: 4rem 0 2rem;
+  overflow: hidden;
+  background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+}
+
+.carouselHeader {
+  width: min(100%, 1200px);
+  margin: 0 auto 2rem;
+  padding: 0 2rem;
+  text-align: center;
+}
+
+.carouselShell {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+.carouselShell::before,
+.carouselShell::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 2;
+  width: min(12vw, 120px);
+  pointer-events: none;
+}
+
+.carouselShell::before {
+  left: 0;
+  background: linear-gradient(90deg, var(--bg-secondary), transparent);
+}
+
+.carouselShell::after {
+  right: 0;
+  background: linear-gradient(270deg, var(--bg-secondary), transparent);
+}
+
+.carouselTrack {
+  display: flex;
+  width: max-content;
+  gap: 1.25rem;
+  padding: 0 1.25rem 1rem;
+  animation: carouselSlide 34s linear infinite;
+}
+
+.carouselShell:hover .carouselTrack {
+  animation-play-state: paused;
+}
+
+.paintingSlide {
+  width: clamp(220px, 24vw, 320px);
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: white;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.paintingSlide:hover {
+  border-color: var(--purple-border);
+  box-shadow: var(--shadow-purple);
+  transform: translateY(-4px);
+}
+
+.paintingImage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--bg-secondary), var(--bg-elevated));
+}
+
+.paintingImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.paintingInitial {
+  color: var(--purple-light);
+  font-family: var(--font-display);
+  font-size: 4rem;
+  font-weight: 300;
+}
+
+.paintingMeta {
+  padding: 1rem 1.1rem 1.15rem;
+}
+
+.paintingArtist {
+  margin-bottom: 0.35rem;
+  color: var(--purple);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.paintingTitle {
+  min-height: 2.6em;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 400;
+  line-height: 1.25;
+}
+
+.paintingPrice {
+  margin-top: 0.75rem;
+  color: var(--purple-dark);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.carouselEmpty {
+  width: min(100%, 720px);
+  margin: 0 auto;
+  padding: 2rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+@keyframes carouselSlide {
+  from { transform: translateX(0); }
+  to { transform: translateX(calc(-50% - 0.625rem)); }
+}
+
+.section {
+  width: min(100%, 1200px);
+  margin: 0 auto;
+  padding: 5rem 2rem;
+}
+
+.sectionTitle {
+  margin-bottom: 2rem;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: clamp(2.1rem, 4vw, 3.1rem);
+  font-weight: 300;
+  line-height: 1.1;
+  text-align: center;
+}
+
+.collectionsGrid,
+.toursGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+
+.collectionCard,
+.tourCard {
+  position: relative;
+  min-height: 240px;
+  padding: 1.65rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition);
+}
+
+.collectionCard:hover,
+.tourCard:hover {
+  border-color: var(--purple-border);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-4px);
+}
+
+.badge {
+  display: inline-flex;
+  margin-bottom: 1.1rem;
+  padding: 0.25rem 0.65rem;
+  border: 1px solid var(--purple-border);
+  border-radius: var(--radius-sm);
+  background: var(--purple-muted);
+  color: var(--purple);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.collectionName,
+.tourName {
+  margin-bottom: 0.75rem;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: 1.55rem;
+  font-weight: 400;
+  line-height: 1.15;
+}
+
+.collectionDesc {
+  margin-bottom: 1.5rem;
+  color: var(--text-secondary);
+  font-size: 0.92rem;
+  line-height: 1.7;
+}
+
+.btnLink {
+  margin-top: auto;
+  border: 0;
+  background: transparent;
+  color: var(--purple);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: var(--transition);
+}
+
+.btnLink:hover {
+  color: var(--purple-dark);
+}
+
+.tourCard {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.tourIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin-bottom: 1.2rem;
+  border: 1px solid var(--purple-border);
+  border-radius: var(--radius-sm);
+  background: var(--purple-muted);
+  color: var(--purple-dark);
+  font-size: 1.35rem;
+}
+
+.tourMeta {
+  margin-bottom: 0.35rem;
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+}
+
+.tourPrice {
+  margin-top: auto;
+  color: var(--purple-dark);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.cta {
+  margin-top: 2rem;
+  padding: 5rem 2rem;
+  background: var(--purple);
+  color: white;
+  text-align: center;
+}
+
+.ctaTitle {
+  margin-bottom: 0.85rem;
+  font-family: var(--font-display);
+  font-size: clamp(2.1rem, 4vw, 3.4rem);
+  font-weight: 300;
+  line-height: 1.1;
+}
+
+.ctaSub {
+  max-width: 620px;
+  margin: 0 auto 2rem;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 1rem;
+}
+
+.btnWhite {
+  border: 1px solid white;
+  background: white;
+  color: var(--purple-dark);
+}
+
+.btnWhite:hover {
+  background: var(--bg-secondary);
+  box-shadow: var(--shadow-purple);
+  transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+  .hero {
+    min-height: auto;
+    padding: 4.5rem 1.25rem;
+  }
+
+  .heroActions,
+  .btnPrimary,
+  .btnOutline,
+  .btnWhite {
+    width: 100%;
+  }
+
+  .heroShape {
+    right: -8rem;
+    bottom: 0.5rem;
+    width: 120vw;
+    opacity: 0.45;
+  }
+
+  .stats {
+    grid-template-columns: 1fr;
+    padding: 2rem 1.25rem 1rem;
+  }
+
+  .carouselSection {
+    padding: 3rem 0 1rem;
+  }
+
+  .carouselHeader {
+    padding: 0 1.25rem;
+  }
+
+  .paintingSlide {
+    width: 240px;
+  }
+
+  .section {
+    padding: 4rem 1.25rem;
+  }
+
+  .collectionsGrid,
+  .toursGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .collectionCard,
+  .tourCard {
+    min-height: auto;
+  }
+}
