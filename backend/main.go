@@ -106,10 +106,6 @@ func setupRouter() http.Handler {
 	router.HandleFunc("/api/reportes/top-artistas-ventas", handlers.ReporteTopArtistasPorVentasHandler).Methods("GET")
 	router.HandleFunc("/api/reportes/colecciones-valor", handlers.ReporteColeccionesValorHandler).Methods("GET")
 
-	router.HandleFunc("/api/exportar/ventas-csv", handlers.ExportarVentasCSVHandler).Methods("GET")
-	router.HandleFunc("/api/exportar/pinturas-csv", handlers.ExportarPinturasCSVHandler).Methods("GET")
-	router.HandleFunc("/api/exportar/artistas-csv", handlers.ExportarArtistasCSVHandler).Methods("GET")
-
 	api := router.PathPrefix("/api").Subrouter()
 	api.Use(middleware.JWTMiddleware)
 
@@ -118,17 +114,17 @@ func setupRouter() http.Handler {
 	api.HandleFunc("/reservas", handlers.CreateReservaHandler).Methods("POST")
 	api.HandleFunc("/reservas/{id}", handlers.UpdateReservaHandler).Methods("PUT")
 	api.HandleFunc("/reservas/{id}", handlers.DeleteReservaHandler).Methods("DELETE")
-
 	api.HandleFunc("/me/tipo-empleado", handlers.GetMiTipoEmpleadoHandler).Methods("GET")
 	api.HandleFunc("/me/reservas", handlers.GetMisReservasHandler).Methods("GET")
 	api.HandleFunc("/me/ventas", handlers.GetMisVentasHandler).Methods("GET")
 
-	admin := router.PathPrefix("/api").Subrouter()
-	admin.Use(middleware.JWTMiddleware)
+	admin := api.PathPrefix("").Subrouter()
 	admin.Use(middleware.RequireRole("empleado"))
 
 	admin.HandleFunc("/auth/register/empleado", handlers.RegisterEmpleadoHandler).Methods("POST")
-
+	admin.HandleFunc("/exportar/ventas-csv", handlers.ExportarVentasCSVHandler).Methods("GET")
+	admin.HandleFunc("/exportar/pinturas-csv", handlers.ExportarPinturasCSVHandler).Methods("GET")
+	admin.HandleFunc("/exportar/artistas-csv", handlers.ExportarArtistasCSVHandler).Methods("GET")
 	admin.HandleFunc("/pinturas", handlers.CreatePinturaHandler).Methods("POST")
 	admin.HandleFunc("/pinturas/{id}", handlers.UpdatePinturaHandler).Methods("PUT")
 	admin.HandleFunc("/pinturas/{id}", handlers.DeletePinturaHandler).Methods("DELETE")
