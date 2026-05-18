@@ -1,95 +1,95 @@
-import React, { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import styles from './Navbar.module.css';
 
 export default function Navbar() {
-  const { isAuthenticated, isEmpleado, logoutUser } = useAuth();
+  const { isAuthenticated, isEmpleado, nombre, logoutUser } = useAuth();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const handleLogout = useCallback(() => {
+  const handleLogout = () => {
     logoutUser();
-    navigate('/login');
     setMenuOpen(false);
-  }, [logoutUser, navigate]);
+    navigate('/login');
+  };
 
-  const closeMenu = useCallback(() => setMenuOpen(false), []);
-
-  const linkClass = ({ isActive }) =>
+  const navClass = ({ isActive }) =>
     `${styles.navLink}${isActive ? ' ' + styles.active : ''}`;
-
-  const links = (
-    <>
-      <NavLink to="/catalogo"    className={linkClass} onClick={closeMenu}>Catálogo</NavLink>
-      <NavLink to="/artistas"    className={linkClass} onClick={closeMenu}>Artistas</NavLink>
-      <NavLink to="/colecciones" className={linkClass} onClick={closeMenu}>Colecciones</NavLink>
-      <NavLink to="/tours"       className={linkClass} onClick={closeMenu}>Tours</NavLink>
-      <NavLink to="/reportes"    className={linkClass} onClick={closeMenu}>Reportes</NavLink>
-      {isEmpleado && (
-        <NavLink to="/admin" className={linkClass} onClick={closeMenu}>Admin</NavLink>
-      )}
-    </>
-  );
 
   return (
     <header className={styles.navbar}>
-      <div className={styles.logo}>
-        Magic <span>Bag</span> Gallery
-      </div>
+      <div className={styles.logo}>Magic <span>Bag</span> Gallery</div>
 
-      <nav className={styles.nav} aria-label="Navegación principal">
-        {links}
+      <nav className={styles.nav}>
+        <NavLink to="/catalogo"    className={navClass}>Catálogo</NavLink>
+        <NavLink to="/artistas"    className={navClass}>Artistas</NavLink>
+        <NavLink to="/colecciones" className={navClass}>Colecciones</NavLink>
+        <NavLink to="/tours"       className={navClass}>Tours</NavLink>
+
+        {isEmpleado && (
+          <NavLink to="/reportes" className={navClass}>Reportes</NavLink>
+        )}
+
+        {isEmpleado && (
+          <NavLink to="/admin" className={navClass}>Admin</NavLink>
+        )}
+
+        {isAuthenticated && !isEmpleado && (
+          <NavLink to="/mi-cuenta" className={navClass}>Mi cuenta</NavLink>
+        )}
       </nav>
 
       <div className={styles.actions}>
         {isAuthenticated ? (
           <>
+            {nombre && <span className={styles.greeting}>Hola, {nombre}</span>}
             {isEmpleado && <span className={styles.badge}>Empleado</span>}
             <button className={styles.btnOutline} onClick={handleLogout}>Salir</button>
           </>
         ) : (
           <>
-            <button className={styles.btnOutline} onClick={() => { navigate('/login'); closeMenu(); }}>
-              Iniciar sesión
-            </button>
-            <button className={styles.btnGold} onClick={() => { navigate('/register'); closeMenu(); }}>
-              Registrarse
-            </button>
+            <button className={styles.btnOutline} onClick={() => navigate('/login')}>Iniciar sesión</button>
+            <button className={styles.btnGold}    onClick={() => navigate('/register')}>Registrarse</button>
           </>
         )}
       </div>
 
       <button
-        className={styles.hamburger}
-        onClick={() => setMenuOpen((o) => !o)}
-        aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
-        aria-expanded={menuOpen}
+        className={`${styles.hamburger} ${menuOpen ? styles.open : ''}`}
+        onClick={() => setMenuOpen(o => !o)}
+        aria-label="Menú"
       >
-        <span className={`${styles.bar} ${menuOpen ? styles.barTop : ''}`} />
-        <span className={`${styles.bar} ${menuOpen ? styles.barMid : ''}`} />
-        <span className={`${styles.bar} ${menuOpen ? styles.barBot : ''}`} />
+        <span /><span /><span />
       </button>
 
       {menuOpen && (
-        <div className={styles.mobileMenu} role="dialog" aria-label="Menú móvil">
-          <nav className={styles.mobileNav}>
-            {links}
-          </nav>
-          <div className={styles.mobileActions}>
-            {isAuthenticated ? (
-              <button className={styles.btnGold} onClick={handleLogout}>Cerrar sesión</button>
-            ) : (
-              <>
-                <button className={styles.btnOutline} onClick={() => { navigate('/login'); closeMenu(); }}>
-                  Iniciar sesión
-                </button>
-                <button className={styles.btnGold} onClick={() => { navigate('/register'); closeMenu(); }}>
-                  Registrarse
-                </button>
-              </>
-            )}
-          </div>
+        <div className={styles.mobileMenu}>
+          <NavLink to="/catalogo"    className={navClass} onClick={() => setMenuOpen(false)}>Catálogo</NavLink>
+          <NavLink to="/artistas"    className={navClass} onClick={() => setMenuOpen(false)}>Artistas</NavLink>
+          <NavLink to="/colecciones" className={navClass} onClick={() => setMenuOpen(false)}>Colecciones</NavLink>
+          <NavLink to="/tours"       className={navClass} onClick={() => setMenuOpen(false)}>Tours</NavLink>
+
+          {isEmpleado && (
+            <NavLink to="/reportes" className={navClass} onClick={() => setMenuOpen(false)}>Reportes</NavLink>
+          )}
+          {isEmpleado && (
+            <NavLink to="/admin" className={navClass} onClick={() => setMenuOpen(false)}>Admin</NavLink>
+          )}
+          {isAuthenticated && !isEmpleado && (
+            <NavLink to="/mi-cuenta" className={navClass} onClick={() => setMenuOpen(false)}>Mi cuenta</NavLink>
+          )}
+
+          <div className={styles.mobileDivider} />
+
+          {isAuthenticated ? (
+            <button className={styles.btnOutline} onClick={handleLogout}>Cerrar sesión</button>
+          ) : (
+            <>
+              <button className={styles.btnOutline} onClick={() => { navigate('/login');    setMenuOpen(false); }}>Iniciar sesión</button>
+              <button className={styles.btnGold}    onClick={() => { navigate('/register'); setMenuOpen(false); }}>Registrarse</button>
+            </>
+          )}
         </div>
       )}
     </header>

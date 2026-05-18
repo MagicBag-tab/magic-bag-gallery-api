@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   getPinturas, deletePintura,
   getArtistas, deleteArtista, createArtista, updateArtista,
@@ -6,28 +6,52 @@ import {
   getTecnicas, deleteTecnica, createTecnica, updateTecnica,
   getVentas, deleteVenta,
   getUsuarios, deleteUsuario,
-  getTours, deleteTour
+  getTours, deleteTour,
+  getReservas,
 } from '../../api/api';
+import { useAuth } from '../../context/AuthContext';
 import Modal from '../../components/Modal/Modal';
 import Loader from '../../components/Loader/Loader';
 import styles from './Admin.module.css';
 
-const TABS = ['Pinturas', 'Artistas', 'Colecciones', 'Técnicas', 'Ventas', 'Tours', 'Usuarios'];
+const TABS_BY_TIPO = {
+  guia:       ['Tours', 'Reservas'],
+  asesor:     ['Ventas', 'Usuarios'],
+  reclutador: ['Artistas', 'Colecciones'],
+};
+const ALL_TABS = ['Pinturas', 'Artistas', 'Colecciones', 'Técnicas', 'Ventas', 'Tours', 'Reservas', 'Usuarios'];
 
 export default function Admin() {
-  const [tab, setTab] = useState('Pinturas');
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [modal, setModal] = useState(null);
-  const [form, setForm] = useState({});
-  const [msg, setMsg] = useState('');
+  const { tipoEmpleado } = useAuth();
 
-  const fetchData = useCallback(async () => {
+  const allowedTabs = useMemo(
+    () => TABS_BY_TIPO[tipoEmpleado] ?? ALL_TABS,
+    [tipoEmpleado]
+  );
+
+  const [tab,     setTab]     = useState(allowedTabs[0]);
+  const [data,    setData]    = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [modal,   setModal]   = useState(null);
+  const [form,    setForm]    = useState({});
+  const [msg,     setMsg]     = useState('');
+
+  useEffect(() => {
+    if (!allowedTabs.includes(tab)) setTab(allowedTabs[0]);
+  }, [allowedTabs, tab]);
+
+  const fetchData = async () => {
     setLoading(true);
     try {
       const fetchers = {
-        Pinturas: getPinturas, Artistas: getArtistas, Colecciones: getColecciones,
-        'Técnicas': getTecnicas, Ventas: getVentas, Tours: getTours, Usuarios: getUsuarios
+        Pinturas:    getPinturas,
+        Artistas:    getArtistas,
+        Colecciones: getColecciones,
+        'Técnicas':  getTecnicas,
+        Ventas:      getVentas,
+        Tours:       getTours,
+        Reservas:    getReservas,
+        Usuarios:    getUsuarios,
       };
       const result = await fetchers[tab]();
       setData(result || []);
@@ -36,21 +60,23 @@ export default function Admin() {
     } finally {
       setLoading(false);
     }
-  }, [tab]);
+  };
 
-  useEffect(() => {
-    fetchData();
-    setMsg('');
-  }, [fetchData]);
+  useEffect(() => { fetchData(); setMsg(''); }, [tab]);
 
   const handleDelete = async (id) => {
     if (!window.confirm('¿Eliminar este registro?')) return;
     try {
       const deleters = {
-        Pinturas: deletePintura, Artistas: deleteArtista, Colecciones: deleteColeccion,
-        'Técnicas': deleteTecnica, Ventas: deleteVenta, Tours: deleteTour, Usuarios: deleteUsuario
+        Pinturas:    deletePintura,
+        Artistas:    deleteArtista,
+        Colecciones: deleteColeccion,
+        'Técnicas':  deleteTecnica,
+        Ventas:      deleteVenta,
+        Tours:       deleteTour,
+        Usuarios:    deleteUsuario,
       };
-      await deleters[tab](id);
+      if (deleters[tab]) await deleters[tab](id);
       fetchData();
     } catch (e) {
       setMsg('Error al eliminar: ' + e.message);
@@ -58,7 +84,7 @@ export default function Admin() {
   };
 
   const openCreate = () => { setForm({}); setModal({ type: 'create' }); setMsg(''); };
-  const openEdit = (item) => { setForm(item); setModal({ type: 'edit', item }); setMsg(''); };
+  const openEdit   = (item) => { setForm(item); setModal({ type: 'edit', item }); setMsg(''); };
   const handleFormChange = (e) => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
 
   const handleSave = async (e) => {
@@ -84,12 +110,22 @@ export default function Admin() {
   };
 
   const getIdField = (item) => {
-    const map = { Pinturas: 'id_pintura', Artistas: 'id_artista', Colecciones: 'id_coleccion', 'Técnicas': 'id_tecnica', Ventas: 'id_venta', Tours: 'id_tour', Usuarios: 'id_usuario' };
+    const map = {
+      Pinturas:    'id_pintura',
+      Artistas:    'id_artista',
+      Colecciones: 'id_coleccion',
+      'Técnicas':  'id_tecnica',
+      Ventas:      'id_venta',
+      Tours:       'id_tour',
+      Reservas:    'id_cliente_tour',
+      Usuarios:    'id_usuario',
+    };
     return item[map[tab]];
   };
 
   const canCreate = ['Artistas', 'Colecciones', 'Técnicas'].includes(tab);
   const canEdit   = ['Artistas', 'Colecciones', 'Técnicas'].includes(tab);
+  const canDelete = !['Reservas'].includes(tab);
 
   const renderRow = (item) => {
     switch (tab) {
@@ -97,8 +133,9 @@ export default function Admin() {
       case 'Artistas':    return <><td>{item.nombre_completo}</td><td>{item.nacionalidad}</td></>;
       case 'Colecciones': return <><td>{item.nombre}</td><td>{item.exclusiva ? 'Sí' : 'No'}</td><td>{item.fecha_lanzamiento}</td></>;
       case 'Técnicas':    return <><td>{item.nombre}</td><td className={styles.desc}>{item.descripcion}</td></>;
-      case 'Ventas':      return <><td>{item.id_venta}</td><td>{item.fecha_venta}</td><td>Q {Number(item.precio).toLocaleString()}</td><td>{item.id_cliente}</td></>;
+      case 'Ventas':      return <><td>{item.fecha_venta}</td><td>Q {Number(item.precio).toLocaleString()}</td><td>{item.id_cliente}</td></>;
       case 'Tours':       return <><td>{item.nombre}</td><td>{item.nombre_guia}</td><td>Q {Number(item.precio).toLocaleString()}</td><td>{item.fecha_inicio}</td></>;
+      case 'Reservas':    return <><td>{item.nombre_tour}</td><td>{item.id_cliente}</td><td>{item.fecha_reserva}</td></>;
       case 'Usuarios':    return <><td>{item.nombre} {item.apellido}</td><td>{item.correo_electronico}</td><td>{item.telefono}</td></>;
       default: return null;
     }
@@ -110,8 +147,9 @@ export default function Admin() {
       case 'Artistas':    return ['Nombre', 'Nacionalidad'];
       case 'Colecciones': return ['Nombre', 'Exclusiva', 'Lanzamiento'];
       case 'Técnicas':    return ['Nombre', 'Descripción'];
-      case 'Ventas':      return ['ID', 'Fecha', 'Total', 'Cliente'];
+      case 'Ventas':      return ['Fecha', 'Total', 'Cliente'];
       case 'Tours':       return ['Nombre', 'Guía', 'Precio', 'Inicio'];
+      case 'Reservas':    return ['Tour', 'Cliente', 'Fecha reserva'];
       case 'Usuarios':    return ['Nombre', 'Correo', 'Teléfono'];
       default: return [];
     }
@@ -153,15 +191,21 @@ export default function Admin() {
     }
   };
 
+  const roleDesc = {
+    guia:       'Guía de tours',
+    asesor:     'Asesor de ventas',
+    reclutador: 'Reclutador de artistas',
+  }[tipoEmpleado] ?? 'Administración general';
+
   return (
     <div className={styles.page}>
       <div className={styles.header}>
-        <p className={styles.eyebrow}>Panel de administración</p>
+        <p className={styles.eyebrow}>Panel de administración — {roleDesc}</p>
         <h1 className={styles.title}>Gestión de contenido</h1>
       </div>
 
       <div className={styles.tabs}>
-        {TABS.map(t => (
+        {allowedTabs.map(t => (
           <button key={t} className={`${styles.tab} ${tab === t ? styles.active : ''}`} onClick={() => setTab(t)}>{t}</button>
         ))}
       </div>
@@ -190,12 +234,14 @@ export default function Admin() {
                     <td className={styles.idCell}>{getIdField(item)}</td>
                     {renderRow(item)}
                     <td className={styles.actions}>
-                      {canEdit && <button className={styles.btnEdit} onClick={() => openEdit(item)}>Editar</button>}
-                      <button className={styles.btnDelete} onClick={() => handleDelete(getIdField(item))}>Eliminar</button>
+                      {canEdit   && <button className={styles.btnEdit}   onClick={() => openEdit(item)}>Editar</button>}
+                      {canDelete && <button className={styles.btnDelete} onClick={() => handleDelete(getIdField(item))}>Eliminar</button>}
                     </td>
                   </tr>
                 ))}
-                {data.length === 0 && <tr><td colSpan={20} className={styles.empty}>Sin registros</td></tr>}
+                {data.length === 0 && (
+                  <tr><td colSpan={20} className={styles.empty}>Sin registros</td></tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -203,7 +249,10 @@ export default function Admin() {
       </div>
 
       {modal && (
-        <Modal title={`${modal.type === 'create' ? 'Crear' : 'Editar'} ${tab.slice(0, -1)}`} onClose={() => setModal(null)}>
+        <Modal
+          title={`${modal.type === 'create' ? 'Crear' : 'Editar'} ${tab.replace(/s$/, '')}`}
+          onClose={() => setModal(null)}
+        >
           <form onSubmit={handleSave} className={styles.form}>
             {renderForm()}
             {msg && <p className={styles.error}>{msg}</p>}
