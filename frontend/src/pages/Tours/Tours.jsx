@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { getTours, createReserva } from '../../api/api';
 import { useAuth } from '../../context/AuthContext';
 import Loader from '../../components/Loader/Loader';

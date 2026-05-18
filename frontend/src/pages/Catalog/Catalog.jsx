@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { getPinturas } from '../../api/api';
 import { useCatalogFilters } from '../../hooks/useCatalogFilters';
 import PaintingCard from '../../components/PaintingCard/PaintingCard';

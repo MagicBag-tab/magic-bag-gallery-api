@@ -1,7 +1,9 @@
+import React from 'react';
 import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { catalogReducer, initialState } from '../hooks/useCatalogFilters';
 import { AuthProvider, useAuth } from '../context/AuthContext';
+import { validateLoginForm } from '../pages/Login/Login';
 
 describe('catalogReducer', () => {
   it('SET_PINTURAS carga las pinturas y deshabilita el loading', () => {
@@ -93,39 +95,28 @@ describe('AuthContext', () => {
   });
 });
 
-function validateLoginForm({ correo, contrasena }) {
-  const errors = {};
-  if (!correo || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
-    errors.correo = 'Correo electrónico inválido';
-  }
-  if (!contrasena || contrasena.length < 6) {
-    errors.contrasena = 'La contraseña debe tener al menos 6 caracteres';
-  }
-  return errors;
-}
-
 describe('validateLoginForm', () => {
   it('retorna errores con campos vacíos', () => {
-    const errors = validateLoginForm({ correo: '', contrasena: '' });
-    expect(errors.correo).toBeDefined();
+    const errors = validateLoginForm({ correo_electronico: '', contrasena: '' });
+    expect(errors.correo_electronico).toBeDefined();
     expect(errors.contrasena).toBeDefined();
   });
 
   it('retorna error de correo con formato inválido', () => {
-    const errors = validateLoginForm({ correo: 'no-es-email', contrasena: '123456' });
-    expect(errors.correo).toBeDefined();
+    const errors = validateLoginForm({ correo_electronico: 'no-es-email', contrasena: '123456' });
+    expect(errors.correo_electronico).toBeDefined();
     expect(errors.contrasena).toBeUndefined();
   });
 
   it('retorna error de contraseña si tiene menos de 6 caracteres', () => {
-    const errors = validateLoginForm({ correo: 'user@test.com', contrasena: '123' });
+    const errors = validateLoginForm({ correo_electronico: 'user@test.com', contrasena: '123' });
     expect(errors.contrasena).toBeDefined();
-    expect(errors.correo).toBeUndefined();
+    expect(errors.correo_electronico).toBeUndefined();
   });
 
   it('no retorna errores con datos válidos', () => {
     const errors = validateLoginForm({
-      correo: 'maria.perez@gmail.com',
+      correo_electronico: 'maria.perez@gmail.com',
       contrasena: 'secreto123',
     });
     expect(Object.keys(errors)).toHaveLength(0);

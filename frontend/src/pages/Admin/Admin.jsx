@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   getPinturas, deletePintura,
   getArtistas, deleteArtista, createArtista, updateArtista,
