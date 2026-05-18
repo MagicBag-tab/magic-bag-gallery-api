@@ -48,7 +48,7 @@ export default function Tours() {
               <p className={styles.cardDesc}>{t.descripcion}</p>
               <div className={styles.cardMeta}>
                 <span>🗓 {new Date(t.fecha_inicio).toLocaleDateString('es-GT')}</span>
-                <span>👤 {t.nombre_guia}</span>
+                <span>Guía {t.nombre_guia}</span>
               </div>
               {isAuthenticated && (
                 <button className={styles.btnReserva} onClick={() => { setSelected(t); setReservaMsg(''); setReservaForm({ id_cliente: '', fecha_reserva: '' }); }}>

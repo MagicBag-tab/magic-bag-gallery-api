@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   getPinturas, deletePintura,
   getArtistas, deleteArtista, createArtista, updateArtista,
@@ -22,7 +22,7 @@ export default function Admin() {
   const [form, setForm] = useState({});
   const [msg, setMsg] = useState('');
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const fetchers = {
@@ -36,9 +36,12 @@ export default function Admin() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [tab]);
 
-  useEffect(() => { fetchData(); setMsg(''); }, [tab]);
+  useEffect(() => {
+    fetchData();
+    setMsg('');
+  }, [fetchData]);
 
   const handleDelete = async (id) => {
     if (!window.confirm('¿Eliminar este registro?')) return;

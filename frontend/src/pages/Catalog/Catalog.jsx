@@ -26,7 +26,7 @@ export default function Catalog() {
     getPinturas()
       .then((data) => setPinturas(data ?? []))
       .catch(() => setError('No se pudo cargar el catálogo. Intenta de nuevo.'));
-  }, []);
+  }, [setError, setPinturas]);
 
   const handleSelect = useCallback((pintura) => {
     setSelected(pintura);
