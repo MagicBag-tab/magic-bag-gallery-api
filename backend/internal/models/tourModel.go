@@ -23,11 +23,12 @@ type TourRequest struct {
 }
 
 type Reserva struct {
-	ID           int    `json:"id_cliente_tour"`
-	IDCliente    int    `json:"id_cliente"`
-	IDTour       int    `json:"id_tour"`
-	NombreTour   string `json:"nombre_tour,omitempty"`
-	FechaReserva string `json:"fecha_reserva"`
+	ID            int    `json:"id_cliente_tour"`
+	IDCliente     int    `json:"id_cliente"`
+	IDTour        int    `json:"id_tour"`
+	NombreCliente string `json:"nombre_cliente,omitempty"`
+	NombreTour    string `json:"nombre_tour,omitempty"`
+	FechaReserva  string `json:"fecha_reserva"`
 }
 
 type ReservaRequest struct {

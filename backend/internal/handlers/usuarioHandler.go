@@ -13,8 +13,11 @@ import (
 
 func GetUsuariosHandler(w http.ResponseWriter, r *http.Request) {
 	rows, err := db.Query(`
-		SELECT id_usuario, nombre, apellido, correo_electronico, telefono
-		FROM usuario
+		SELECT u.id_usuario, u.nombre, u.apellido, u.correo_electronico, u.telefono,
+		       e.id_empleado, e.tipo_empleado
+		FROM usuario u
+		LEFT JOIN empleado e ON e.id_usuario = u.id_usuario
+		ORDER BY u.nombre, u.apellido
 	`)
 	if err != nil {
 		http.Error(w, "Error al obtener usuarios", http.StatusInternalServerError)
@@ -25,9 +28,20 @@ func GetUsuariosHandler(w http.ResponseWriter, r *http.Request) {
 	usuarios := []models.Usuario{}
 	for rows.Next() {
 		var u models.Usuario
-		if err := rows.Scan(&u.ID, &u.Nombre, &u.Apellido, &u.CorreoElectronico, &u.Telefono); err != nil {
+		var idEmpleado sql.NullInt64
+		var tipoEmpleado sql.NullString
+		if err := rows.Scan(
+			&u.ID, &u.Nombre, &u.Apellido, &u.CorreoElectronico, &u.Telefono,
+			&idEmpleado, &tipoEmpleado,
+		); err != nil {
 			http.Error(w, "Error al leer usuario", http.StatusInternalServerError)
 			return
+		}
+		if idEmpleado.Valid {
+			u.IDEmpleado = int(idEmpleado.Int64)
+		}
+		if tipoEmpleado.Valid {
+			u.TipoEmpleado = tipoEmpleado.String
 		}
 		usuarios = append(usuarios, u)
 	}
@@ -44,11 +58,18 @@ func GetUsuarioByIDHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var u models.Usuario
+	var idEmpleado sql.NullInt64
+	var tipoEmpleado sql.NullString
 	err = db.QueryRow(`
-		SELECT id_usuario, nombre, apellido, correo_electronico, telefono
-		FROM usuario
-		WHERE id_usuario = $1
-	`, id).Scan(&u.ID, &u.Nombre, &u.Apellido, &u.CorreoElectronico, &u.Telefono)
+		SELECT u.id_usuario, u.nombre, u.apellido, u.correo_electronico, u.telefono,
+		       e.id_empleado, e.tipo_empleado
+		FROM usuario u
+		LEFT JOIN empleado e ON e.id_usuario = u.id_usuario
+		WHERE u.id_usuario = $1
+	`, id).Scan(
+		&u.ID, &u.Nombre, &u.Apellido, &u.CorreoElectronico, &u.Telefono,
+		&idEmpleado, &tipoEmpleado,
+	)
 	if err == sql.ErrNoRows {
 		http.Error(w, "Usuario no encontrado", http.StatusNotFound)
 		return
@@ -56,6 +77,12 @@ func GetUsuarioByIDHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "Error al obtener usuario", http.StatusInternalServerError)
 		return
+	}
+	if idEmpleado.Valid {
+		u.IDEmpleado = int(idEmpleado.Int64)
+	}
+	if tipoEmpleado.Valid {
+		u.TipoEmpleado = tipoEmpleado.String
 	}
 
 	w.Header().Set("Content-Type", "application/json")

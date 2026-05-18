@@ -358,8 +358,6 @@ npm run build    # Build de producción
 | GET    | `/exportar/pinturas-csv`  | No   | Descarga CSV del catálogo completo |
 | GET    | `/exportar/artistas-csv`  | No   | Descarga CSV de artistas           |
 
-> **Nota sobre los CSV:** los botones de descarga en `/reportes` usan `<a href="..." download>`. Para que funcionen correctamente en producción, el frontend debe apuntar al host del backend, no al proxy de desarrollo. Ver sección de despliegue.
-
 ---
 
 ## Estructura del proyecto

@@ -6,6 +6,8 @@ type Usuario struct {
 	Apellido          string `json:"apellido"`
 	CorreoElectronico string `json:"correo_electronico"`
 	Telefono          string `json:"telefono"`
+	IDEmpleado        int    `json:"id_empleado,omitempty"`
+	TipoEmpleado      string `json:"tipo_empleado,omitempty"`
 }
 
 type UsuarioRequest struct {

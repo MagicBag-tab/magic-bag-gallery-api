@@ -12,8 +12,12 @@ import (
 
 func GetArtistasHandler(w http.ResponseWriter, r *http.Request) {
 	rows, err := db.Query(`
-		SELECT id_artista, nombre_completo, nacionalidad, id_reclutador
-		FROM artista
+		SELECT a.id_artista, a.nombre_completo, a.nacionalidad, a.id_reclutador,
+		       u.nombre || ' ' || u.apellido AS nombre_reclutador
+		FROM artista a
+		JOIN empleado e ON a.id_reclutador = e.id_empleado
+		JOIN usuario u ON e.id_usuario = u.id_usuario
+		ORDER BY a.nombre_completo
 	`)
 	if err != nil {
 		http.Error(w, "Error al obtener artistas", http.StatusInternalServerError)
@@ -24,7 +28,9 @@ func GetArtistasHandler(w http.ResponseWriter, r *http.Request) {
 	artistas := []models.Artista{}
 	for rows.Next() {
 		var a models.Artista
-		if err := rows.Scan(&a.ID, &a.NombreCompleto, &a.Nacionalidad, &a.IDReclutador); err != nil {
+		if err := rows.Scan(
+			&a.ID, &a.NombreCompleto, &a.Nacionalidad, &a.IDReclutador, &a.NombreReclutador,
+		); err != nil {
 			http.Error(w, "Error al leer artista", http.StatusInternalServerError)
 			return
 		}
@@ -44,10 +50,13 @@ func GetArtistaByIDHandler(w http.ResponseWriter, r *http.Request) {
 
 	var a models.Artista
 	err = db.QueryRow(`
-		SELECT id_artista, nombre_completo, nacionalidad, id_reclutador
-		FROM artista
-		WHERE id_artista = $1
-	`, id).Scan(&a.ID, &a.NombreCompleto, &a.Nacionalidad, &a.IDReclutador)
+		SELECT a.id_artista, a.nombre_completo, a.nacionalidad, a.id_reclutador,
+		       u.nombre || ' ' || u.apellido AS nombre_reclutador
+		FROM artista a
+		JOIN empleado e ON a.id_reclutador = e.id_empleado
+		JOIN usuario u ON e.id_usuario = u.id_usuario
+		WHERE a.id_artista = $1
+	`, id).Scan(&a.ID, &a.NombreCompleto, &a.Nacionalidad, &a.IDReclutador, &a.NombreReclutador)
 	if err == sql.ErrNoRows {
 		http.Error(w, "Artista no encontrado", http.StatusNotFound)
 		return
@@ -115,6 +124,23 @@ func CreateArtistaHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var reclutadorExists bool
+	if err := tx.QueryRow(`
+		SELECT EXISTS(
+			SELECT 1 FROM empleado
+			WHERE id_empleado = $1 AND tipo_empleado = 'reclutador'
+		)
+	`, req.IDReclutador).Scan(&reclutadorExists); err != nil {
+		tx.Rollback()
+		http.Error(w, "Error al verificar reclutador", http.StatusInternalServerError)
+		return
+	}
+	if !reclutadorExists {
+		tx.Rollback()
+		http.Error(w, "El reclutador especificado no existe", http.StatusBadRequest)
+		return
+	}
+
 	var id int
 	err = tx.QueryRow(`
 		INSERT INTO artista (nombre_completo, nacionalidad, id_reclutador)
@@ -165,6 +191,23 @@ func UpdateArtistaHandler(w http.ResponseWriter, r *http.Request) {
 	tx, err := db.Begin()
 	if err != nil {
 		http.Error(w, "Error al iniciar transacción", http.StatusInternalServerError)
+		return
+	}
+
+	var reclutadorExists bool
+	if err := tx.QueryRow(`
+		SELECT EXISTS(
+			SELECT 1 FROM empleado
+			WHERE id_empleado = $1 AND tipo_empleado = 'reclutador'
+		)
+	`, req.IDReclutador).Scan(&reclutadorExists); err != nil {
+		tx.Rollback()
+		http.Error(w, "Error al verificar reclutador", http.StatusInternalServerError)
+		return
+	}
+	if !reclutadorExists {
+		tx.Rollback()
+		http.Error(w, "El reclutador especificado no existe", http.StatusBadRequest)
 		return
 	}
 

@@ -1,12 +1,13 @@
 package models
 
 type Artista struct {
-	ID             int      `json:"id_artista"`
-	NombreCompleto string   `json:"nombre_completo"`
-	Nacionalidad   string   `json:"nacionalidad"`
-	IDReclutador   int      `json:"id_reclutador"`
-	Pinturas       []string `json:"pinturas,omitempty"`
-	Colecciones    []string `json:"colecciones,omitempty"`
+	ID               int      `json:"id_artista"`
+	NombreCompleto   string   `json:"nombre_completo"`
+	Nacionalidad     string   `json:"nacionalidad"`
+	IDReclutador     int      `json:"id_reclutador"`
+	NombreReclutador string   `json:"nombre_reclutador,omitempty"`
+	Pinturas         []string `json:"pinturas,omitempty"`
+	Colecciones      []string `json:"colecciones,omitempty"`
 }
 
 type ArtistaRequest struct {

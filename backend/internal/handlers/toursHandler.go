@@ -206,9 +206,13 @@ func DeleteTourHandler(w http.ResponseWriter, r *http.Request) {
 func GetReservasHandler(w http.ResponseWriter, r *http.Request) {
 	rows, err := db.Query(`
 		SELECT ct.id_cliente_tour, ct.id_cliente, ct.id_tour,
+		       uc.nombre || ' ' || uc.apellido AS nombre_cliente,
 		       t.nombre AS nombre_tour, ct.fecha_reserva
 		FROM cliente_tour ct
+		JOIN cliente c ON ct.id_cliente = c.id_cliente
+		JOIN usuario uc ON c.id_usuario = uc.id_usuario
 		JOIN tour t ON ct.id_tour = t.id_tour
+		ORDER BY ct.fecha_reserva DESC
 	`)
 	if err != nil {
 		http.Error(w, "Error al obtener reservas", http.StatusInternalServerError)
@@ -219,7 +223,9 @@ func GetReservasHandler(w http.ResponseWriter, r *http.Request) {
 	reservas := []models.Reserva{}
 	for rows.Next() {
 		var res models.Reserva
-		if err := rows.Scan(&res.ID, &res.IDCliente, &res.IDTour, &res.NombreTour, &res.FechaReserva); err != nil {
+		if err := rows.Scan(
+			&res.ID, &res.IDCliente, &res.IDTour, &res.NombreCliente, &res.NombreTour, &res.FechaReserva,
+		); err != nil {
 			http.Error(w, "Error al leer reserva", http.StatusInternalServerError)
 			return
 		}
@@ -240,11 +246,14 @@ func GetReservaByIDHandler(w http.ResponseWriter, r *http.Request) {
 	var res models.Reserva
 	err = db.QueryRow(`
 		SELECT ct.id_cliente_tour, ct.id_cliente, ct.id_tour,
+		       uc.nombre || ' ' || uc.apellido AS nombre_cliente,
 		       t.nombre AS nombre_tour, ct.fecha_reserva
 		FROM cliente_tour ct
+		JOIN cliente c ON ct.id_cliente = c.id_cliente
+		JOIN usuario uc ON c.id_usuario = uc.id_usuario
 		JOIN tour t ON ct.id_tour = t.id_tour
 		WHERE ct.id_cliente_tour = $1
-	`, id).Scan(&res.ID, &res.IDCliente, &res.IDTour, &res.NombreTour, &res.FechaReserva)
+	`, id).Scan(&res.ID, &res.IDCliente, &res.IDTour, &res.NombreCliente, &res.NombreTour, &res.FechaReserva)
 	if err == sql.ErrNoRows {
 		http.Error(w, "Reserva no encontrada", http.StatusNotFound)
 		return
@@ -263,6 +272,20 @@ func CreateReservaHandler(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Body inválido", http.StatusBadRequest)
 		return
+	}
+
+	if req.IDCliente == 0 {
+		idUsuario, ok := getUserIDFromContext(r)
+		if !ok {
+			http.Error(w, "Token inválido", http.StatusUnauthorized)
+			return
+		}
+		if err := db.QueryRow(`
+			SELECT id_cliente FROM cliente WHERE id_usuario = $1 LIMIT 1
+		`, idUsuario).Scan(&req.IDCliente); err != nil {
+			http.Error(w, "Cliente no encontrado", http.StatusNotFound)
+			return
+		}
 	}
 
 	if req.IDCliente == 0 || req.IDTour == 0 || req.FechaReserva == "" {
