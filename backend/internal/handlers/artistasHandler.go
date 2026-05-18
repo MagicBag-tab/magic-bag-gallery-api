@@ -119,6 +119,7 @@ func CreateArtistaHandler(w http.ResponseWriter, r *http.Request) {
 	err = tx.QueryRow(`
 		INSERT INTO artista (nombre_completo, nacionalidad, id_reclutador)
 		VALUES ($1, $2, $3)
+		RETURNING id_artista
 	`, req.NombreCompleto, req.Nacionalidad, req.IDReclutador).Scan(&id)
 	if err != nil {
 		tx.Rollback()

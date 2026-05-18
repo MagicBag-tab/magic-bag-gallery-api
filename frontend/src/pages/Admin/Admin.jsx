@@ -91,16 +91,32 @@ export default function Admin() {
     e.preventDefault();
     setMsg('');
     try {
+      const payload = { ...form };
+
+      const idKeys = {
+        Pinturas:    'id_pintura',
+        Artistas:    'id_artista',
+        Colecciones: 'id_coleccion',
+        'Técnicas':  'id_tecnica',
+      };
+      
+      // Limpieza de campos para creación
+      if (modal.type === 'create' && idKeys[tab]) {
+        delete payload[idKeys[tab]];
+      }
+
       if (tab === 'Artistas') {
-        if (modal.type === 'create') await createArtista(form);
-        else await updateArtista(modal.item.id_artista, form);
+        payload.id_reclutador = parseInt(payload.id_reclutador, 10);
+        
+        if (modal.type === 'create') await createArtista(payload);
+        else await updateArtista(modal.item.id_artista, payload);
       } else if (tab === 'Colecciones') {
-        const payload = { ...form, exclusiva: form.exclusiva === 'true' };
-        if (modal.type === 'create') await createColeccion(payload);
-        else await updateColeccion(modal.item.id_coleccion, payload);
+        const collPayload = { ...payload, exclusiva: payload.exclusiva === 'true' };
+        if (modal.type === 'create') await createColeccion(collPayload);
+        else await updateColeccion(modal.item.id_coleccion, collPayload);
       } else if (tab === 'Técnicas') {
-        if (modal.type === 'create') await createTecnica(form);
-        else await updateTecnica(modal.item.id_tecnica, form);
+        if (modal.type === 'create') await createTecnica(payload);
+        else await updateTecnica(modal.item.id_tecnica, payload);
       }
       setModal(null);
       fetchData();

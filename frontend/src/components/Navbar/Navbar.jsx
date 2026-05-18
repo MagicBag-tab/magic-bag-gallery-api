@@ -22,10 +22,14 @@ export default function Navbar() {
       <div className={styles.logo}>Magic <span>Bag</span> Gallery</div>
 
       <nav className={styles.nav}>
-        <NavLink to="/catalogo"    className={navClass}>Catálogo</NavLink>
-        <NavLink to="/artistas"    className={navClass}>Artistas</NavLink>
-        <NavLink to="/colecciones" className={navClass}>Colecciones</NavLink>
-        <NavLink to="/tours"       className={navClass}>Tours</NavLink>
+        {!isEmpleado && (
+          <>
+            <NavLink to="/catalogo"    className={navClass}>Catálogo</NavLink>
+            <NavLink to="/artistas"    className={navClass}>Artistas</NavLink>
+            <NavLink to="/colecciones" className={navClass}>Colecciones</NavLink>
+            <NavLink to="/tours"       className={navClass}>Tours</NavLink>
+          </>
+        )}
 
         {isEmpleado && (
           <NavLink to="/reportes" className={navClass}>Reportes</NavLink>
@@ -35,7 +39,7 @@ export default function Navbar() {
           <NavLink to="/admin" className={navClass}>Admin</NavLink>
         )}
 
-        {isAuthenticated && !isEmpleado && (
+        {(isAuthenticated && !isEmpleado) && (
           <NavLink to="/mi-cuenta" className={navClass}>Mi cuenta</NavLink>
         )}
       </nav>
@@ -43,7 +47,12 @@ export default function Navbar() {
       <div className={styles.actions}>
         {isAuthenticated ? (
           <>
-            {nombre && <span className={styles.greeting}>Hola, {nombre}</span>}
+            {nombre && (
+              <span className={styles.greeting}>
+                <span className={styles.hola}>Hola,</span>{" "}
+                <span className={styles.nombreUsuario}>{nombre}</span>
+              </span>
+            )}
             {isEmpleado && <span className={styles.badge}>Empleado</span>}
             <button className={styles.btnOutline} onClick={handleLogout}>Salir</button>
           </>
@@ -65,10 +74,14 @@ export default function Navbar() {
 
       {menuOpen && (
         <div className={styles.mobileMenu}>
-          <NavLink to="/catalogo"    className={navClass} onClick={() => setMenuOpen(false)}>Catálogo</NavLink>
-          <NavLink to="/artistas"    className={navClass} onClick={() => setMenuOpen(false)}>Artistas</NavLink>
-          <NavLink to="/colecciones" className={navClass} onClick={() => setMenuOpen(false)}>Colecciones</NavLink>
-          <NavLink to="/tours"       className={navClass} onClick={() => setMenuOpen(false)}>Tours</NavLink>
+          {!isEmpleado && (
+            <>
+              <NavLink to="/catalogo"    className={navClass} onClick={() => setMenuOpen(false)}>Catálogo</NavLink>
+              <NavLink to="/artistas"    className={navClass} onClick={() => setMenuOpen(false)}>Artistas</NavLink>
+              <NavLink to="/colecciones" className={navClass} onClick={() => setMenuOpen(false)}>Colecciones</NavLink>
+              <NavLink to="/tours"       className={navClass} onClick={() => setMenuOpen(false)}>Tours</NavLink>
+            </>
+          )}
 
           {isEmpleado && (
             <NavLink to="/reportes" className={navClass} onClick={() => setMenuOpen(false)}>Reportes</NavLink>

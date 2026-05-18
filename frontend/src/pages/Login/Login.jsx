@@ -44,8 +44,32 @@ export default function Login() {
     setLoading(true);
     try {
       const data = await login(form.correo_electronico, form.contrasena);
-      loginUser(data.token, data.role);
-      navigate('/catalogo');
+      
+      const payload = JSON.parse(atob(data.token.split('.')[1]));
+      const userId = payload.sub;
+
+      // Si es cliente, no intentamos pedir datos a la ruta de admin
+      if (data.role === 'cliente') {
+        loginUser(data.token, data.role, 'Visitante');
+        navigate('/catalogo');
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/usuarios/${userId}`, {
+          headers: { 'Authorization': `Bearer ${data.token}` }
+        });
+        if (res.ok) {
+          const userData = await res.json();
+          loginUser(data.token, data.role, userData.nombre, userData.tipo_empleado);
+        } else {
+          loginUser(data.token, data.role, data.role === 'cliente' ? 'Visitante' : '');
+        }
+      } catch {
+        loginUser(data.token, data.role, 'Usuario');
+      }
+      
+      navigate(data.role === 'empleado' ? '/admin' : '/catalogo');
     } catch {
       setServerError('Credenciales inválidas. Verifica tu correo y contraseña.');
     } finally {
