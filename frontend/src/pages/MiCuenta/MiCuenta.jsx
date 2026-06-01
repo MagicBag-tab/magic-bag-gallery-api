@@ -18,7 +18,7 @@ export default function MiCuenta() {
     setErrorR('');
     try {
       const res = await fetch('/api/me/reservas', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        credentials: 'include',
       });
       if (!res.ok) throw new Error(`Error ${res.status}`);
       const data = await res.json();
@@ -35,7 +35,7 @@ export default function MiCuenta() {
     setErrorV('');
     try {
       const res = await fetch('/api/me/ventas', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        credentials: 'include',
       });
       if (!res.ok) throw new Error(`Error ${res.status}`);
       const data = await res.json();

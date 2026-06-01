@@ -2,15 +2,12 @@ const BASE = '/api';
 
 function getHeaders(auth = false) {
   const h = { 'Content-Type': 'application/json' };
-  if (auth) {
-    const token = localStorage.getItem('token');
-    if (token) h['Authorization'] = `Bearer ${token}`;
-  }
+  void auth;
   return h;
 }
 
 async function request(path, options = {}) {
-  const res = await fetch(`${BASE}${path}`, options);
+  const res = await fetch(`${BASE}${path}`, { credentials: 'include', ...options });
   if (!res.ok) {
     const text = await res.text();
     throw new Error(text || `Error ${res.status}`);
@@ -22,6 +19,9 @@ async function request(path, options = {}) {
 
 export const login = (correo_electronico, contrasena) =>
   request('/login', { method: 'POST', headers: getHeaders(), body: JSON.stringify({ correo_electronico, contrasena }) });
+
+export const logout = () =>
+  request('/logout', { method: 'POST', headers: getHeaders() });
 
 export const registerCliente = (data) =>
   request('/register/cliente', { method: 'POST', headers: getHeaders(), body: JSON.stringify(data) });
@@ -75,10 +75,7 @@ export const getReporteVentasPorMes      = () => request('/reportes/ventas-por-m
 export const getReporteTecnicasPopulares = () => request('/reportes/tecnicas-populares',      { headers: getHeaders(true) });
 
 async function downloadCSV(path, filename) {
-  const token = localStorage.getItem('token');
-  const res = await fetch(`/api${path}`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-  });
+  const res = await fetch(`/api${path}`, { credentials: 'include' });
   if (!res.ok) throw new Error(`Error ${res.status}`);
   const blob = await res.blob();
   const url = URL.createObjectURL(blob);

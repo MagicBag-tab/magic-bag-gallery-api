@@ -19,7 +19,7 @@ export default function Register() {
     setLoading(true);
     try {
       const data = await registerCliente(form);
-      loginUser(data.token, data.role);
+      loginUser(data.role, data.nombre || form.nombre);
       navigate('/catalogo');
     } catch (err) {
       setError(err.message || 'Error al registrarse.');

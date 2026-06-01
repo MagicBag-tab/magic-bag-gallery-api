@@ -58,7 +58,7 @@ describe('catalogReducer', () => {
 });
 
 describe('AuthContext', () => {
-  it('empieza sin usuario autenticado cuando no hay token en localStorage', () => {
+  it('empieza sin usuario autenticado cuando no hay rol en localStorage', () => {
     localStorage.clear();
     const wrapper = ({ children }) => <AuthProvider>{children}</AuthProvider>;
     const { result } = renderHook(() => useAuth(), { wrapper });
@@ -66,32 +66,32 @@ describe('AuthContext', () => {
     expect(result.current.isEmpleado).toBe(false);
   });
 
-  it('loginUser guarda el token y actualiza el estado', () => {
+  it('loginUser guarda la sesion local y actualiza el estado', () => {
     localStorage.clear();
     const wrapper = ({ children }) => <AuthProvider>{children}</AuthProvider>;
     const { result } = renderHook(() => useAuth(), { wrapper });
 
     act(() => {
-      result.current.loginUser('token-abc', 'empleado');
+      result.current.loginUser('empleado', 'Ana', 'guia');
     });
 
     expect(result.current.isAuthenticated).toBe(true);
     expect(result.current.isEmpleado).toBe(true);
-    expect(localStorage.getItem('token')).toBe('token-abc');
+    expect(localStorage.getItem('role')).toBe('empleado');
+    expect(localStorage.getItem('tipoEmpleado')).toBe('guia');
   });
 
-  it('logoutUser limpia el estado y el localStorage', () => {
-    localStorage.setItem('token', 'token-xyz');
+  it('logoutUser limpia el estado y el localStorage', async () => {
     localStorage.setItem('role', 'cliente');
     const wrapper = ({ children }) => <AuthProvider>{children}</AuthProvider>;
     const { result } = renderHook(() => useAuth(), { wrapper });
 
-    act(() => {
-      result.current.logoutUser();
+    await act(async () => {
+      await result.current.logoutUser();
     });
 
     expect(result.current.isAuthenticated).toBe(false);
-    expect(localStorage.getItem('token')).toBeNull();
+    expect(localStorage.getItem('role')).toBeNull();
   });
 });
 
