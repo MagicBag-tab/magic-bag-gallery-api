@@ -14,13 +14,18 @@ import (
 	"github.com/joho/godotenv"
 
 	_ "github.com/lib/pq"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 var db *sql.DB
+var orm *gorm.DB
 
 func main() {
 	loadDatabase()
 	handlers.SetDB(db)
+	handlers.SetGormDB(orm)
+	middleware.InitSessionStore()
 
 	router := setupRouter()
 	handler := corsMiddleware()(router)
@@ -63,6 +68,11 @@ func connectDB() error {
 	if err = db.Ping(); err != nil {
 		return fmt.Errorf("error al verificar conexión a la base de datos: %v", err)
 	}
+	orm, err = gorm.Open(postgres.New(postgres.Config{Conn: db}), &gorm.Config{})
+	if err != nil {
+		return fmt.Errorf("error al inicializar GORM: %v", err)
+	}
+
 	log.Println("✓ Conectado a PostgreSQL")
 	return nil
 }
@@ -75,7 +85,9 @@ func setupRouter() http.Handler {
 	)
 
 	router.HandleFunc("/api/login", handlers.LoginHandler).Methods("POST")
+	router.HandleFunc("/api/logout", handlers.LogoutHandler).Methods("POST")
 	router.HandleFunc("/api/register/cliente", handlers.RegisterClienteHandler).Methods("POST")
+	router.Handle("/api/session", middleware.SessionMiddleware(http.HandlerFunc(handlers.SessionHandler))).Methods("GET")
 
 	router.HandleFunc("/api/pinturas", handlers.GetPinturasHandler).Methods("GET")
 	router.HandleFunc("/api/pinturas/{id}", handlers.GetPinturaByIDHandler).Methods("GET")
@@ -95,19 +107,8 @@ func setupRouter() http.Handler {
 	router.HandleFunc("/api/tours", handlers.GetToursHandler).Methods("GET")
 	router.HandleFunc("/api/tours/{id}", handlers.GetTourByIDHandler).Methods("GET")
 
-	router.HandleFunc("/api/reportes/pinturas-completo", handlers.ReportePinturasCompletoHandler).Methods("GET")
-	router.HandleFunc("/api/reportes/ventas-detalle", handlers.ReporteVentasDetalleHandler).Methods("GET")
-	router.HandleFunc("/api/reportes/artistas-resumen", handlers.ReporteArtistasResumenHandler).Methods("GET")
-	router.HandleFunc("/api/reportes/artistas-con-ventas", handlers.ReporteArtistasConVentasHandler).Methods("GET")
-	router.HandleFunc("/api/reportes/clientes-vip-compradores", handlers.ReporteClientesVIPCompradoresHandler).Methods("GET")
-	router.HandleFunc("/api/reportes/ventas-por-mes", handlers.ReporteVentasPorMesHandler).Methods("GET")
-	router.HandleFunc("/api/reportes/ventas-por-mes/{anio}", handlers.ReporteVentasPorAnioHandler).Methods("GET")
-	router.HandleFunc("/api/reportes/tecnicas-populares", handlers.ReporteTecnicasPopularesHandler).Methods("GET")
-	router.HandleFunc("/api/reportes/top-artistas-ventas", handlers.ReporteTopArtistasPorVentasHandler).Methods("GET")
-	router.HandleFunc("/api/reportes/colecciones-valor", handlers.ReporteColeccionesValorHandler).Methods("GET")
-
 	api := router.PathPrefix("/api").Subrouter()
-	api.Use(middleware.JWTMiddleware)
+	api.Use(middleware.SessionMiddleware)
 
 	api.HandleFunc("/reservas", handlers.GetReservasHandler).Methods("GET")
 	api.HandleFunc("/reservas/{id}", handlers.GetReservaByIDHandler).Methods("GET")
@@ -122,6 +123,16 @@ func setupRouter() http.Handler {
 	admin.Use(middleware.RequireRole("empleado"))
 
 	admin.HandleFunc("/auth/register/empleado", handlers.RegisterEmpleadoHandler).Methods("POST")
+	admin.HandleFunc("/reportes/pinturas-completo", handlers.ReportePinturasCompletoHandler).Methods("GET")
+	admin.HandleFunc("/reportes/ventas-detalle", handlers.ReporteVentasDetalleHandler).Methods("GET")
+	admin.HandleFunc("/reportes/artistas-resumen", handlers.ReporteArtistasResumenHandler).Methods("GET")
+	admin.HandleFunc("/reportes/artistas-con-ventas", handlers.ReporteArtistasConVentasHandler).Methods("GET")
+	admin.HandleFunc("/reportes/clientes-vip-compradores", handlers.ReporteClientesVIPCompradoresHandler).Methods("GET")
+	admin.HandleFunc("/reportes/ventas-por-mes", handlers.ReporteVentasPorMesHandler).Methods("GET")
+	admin.HandleFunc("/reportes/ventas-por-mes/{anio}", handlers.ReporteVentasPorAnioHandler).Methods("GET")
+	admin.HandleFunc("/reportes/tecnicas-populares", handlers.ReporteTecnicasPopularesHandler).Methods("GET")
+	admin.HandleFunc("/reportes/top-artistas-ventas", handlers.ReporteTopArtistasPorVentasHandler).Methods("GET")
+	admin.HandleFunc("/reportes/colecciones-valor", handlers.ReporteColeccionesValorHandler).Methods("GET")
 	admin.HandleFunc("/exportar/ventas-csv", handlers.ExportarVentasCSVHandler).Methods("GET")
 	admin.HandleFunc("/exportar/pinturas-csv", handlers.ExportarPinturasCSVHandler).Methods("GET")
 	admin.HandleFunc("/exportar/artistas-csv", handlers.ExportarArtistasCSVHandler).Methods("GET")
@@ -176,7 +187,12 @@ func setupRouter() http.Handler {
 func corsMiddleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Access-Control-Allow-Origin", "*")
+			origin := r.Header.Get("Origin")
+			if origin == "http://localhost:3000" || origin == "http://127.0.0.1:3000" {
+				w.Header().Set("Access-Control-Allow-Origin", origin)
+				w.Header().Set("Access-Control-Allow-Credentials", "true")
+			}
+			w.Header().Set("Vary", "Origin")
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 			if r.Method == "OPTIONS" {
