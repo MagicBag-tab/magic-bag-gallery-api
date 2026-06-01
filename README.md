@@ -71,9 +71,9 @@ La base de datos se inicializa automáticamente con el esquema DDL y los datos d
 Copiar `.env.example` a `.env`. Las variables requeridas son:
 
 ```env
-POSTGRES_USER=proy2
+POSTGRES_USER=proy3
 POSTGRES_PASSWORD=secret
-POSTGRES_DB=proy2db
+POSTGRES_DB=proy3db
 DB_HOST=database
 DB_PORT=5432
 JWT_SECRET=your_super_secret_jwt_key_here_change_in_production
