@@ -1,36 +1,26 @@
 package handlers
 
 import (
-	"database/sql"
 	"encoding/json"
 	"magic-bag-gallery-api/internal/models"
 	"net/http"
 	"strconv"
 
 	"github.com/gorilla/mux"
+	"gorm.io/gorm"
 )
 
 func GetVentasHandler(w http.ResponseWriter, r *http.Request) {
-	rows, err := db.Query(`
-		SELECT id_venta, id_cliente, id_empleado, fecha_venta, precio
+	var ventas []models.Venta
+	err := gormDB.Raw(`
+		SELECT id_venta, id_cliente, id_empleado, TO_CHAR(fecha_venta, 'YYYY-MM-DD') AS fecha_venta, precio::text AS precio
 		FROM venta
-	`)
+		ORDER BY fecha_venta DESC, id_venta DESC
+	`).Scan(&ventas).Error
 	if err != nil {
 		http.Error(w, "Error al obtener ventas", http.StatusInternalServerError)
 		return
 	}
-	defer rows.Close()
-
-	ventas := []models.Venta{}
-	for rows.Next() {
-		var v models.Venta
-		if err := rows.Scan(&v.ID, &v.IDCliente, &v.IDEmpleado, &v.FechaVenta, &v.Precio); err != nil {
-			http.Error(w, "Error al leer venta", http.StatusInternalServerError)
-			return
-		}
-		ventas = append(ventas, v)
-	}
-
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(ventas)
 }
@@ -38,33 +28,28 @@ func GetVentasHandler(w http.ResponseWriter, r *http.Request) {
 func GetVentaByIDHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(mux.Vars(r)["id"])
 	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
+		http.Error(w, "ID invalido", http.StatusBadRequest)
 		return
 	}
 
-	var v models.Venta
-	err = db.QueryRow(`
-		SELECT id_venta, id_cliente, id_empleado, fecha_venta, precio
+	var venta models.Venta
+	err = gormDB.Raw(`
+		SELECT id_venta, id_cliente, id_empleado, TO_CHAR(fecha_venta, 'YYYY-MM-DD') AS fecha_venta, precio::text AS precio
 		FROM venta
-		WHERE id_venta = $1
-	`, id).Scan(&v.ID, &v.IDCliente, &v.IDEmpleado, &v.FechaVenta, &v.Precio)
-	if err == sql.ErrNoRows {
+		WHERE id_venta = ?
+	`, id).Scan(&venta).Error
+	if err != nil || venta.ID == 0 {
 		http.Error(w, "Venta no encontrada", http.StatusNotFound)
 		return
 	}
-	if err != nil {
-		http.Error(w, "Error al obtener venta", http.StatusInternalServerError)
-		return
-	}
-
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(v)
+	json.NewEncoder(w).Encode(venta)
 }
 
 func CreateVentaHandler(w http.ResponseWriter, r *http.Request) {
 	var req models.VentaRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Body inválido", http.StatusBadRequest)
+		http.Error(w, "Body invalido", http.StatusBadRequest)
 		return
 	}
 
@@ -73,30 +58,7 @@ func CreateVentaHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var clienteExists, empleadoExists bool
-	if err := db.QueryRow(`SELECT EXISTS(SELECT 1 FROM cliente WHERE id_cliente = $1)`, req.IDCliente).Scan(&clienteExists); err != nil {
-		http.Error(w, "Error al verificar cliente", http.StatusInternalServerError)
-		return
-	}
-	if err := db.QueryRow(`SELECT EXISTS(SELECT 1 FROM empleado WHERE id_empleado = $1)`, req.IDEmpleado).Scan(&empleadoExists); err != nil {
-		http.Error(w, "Error al verificar empleado", http.StatusInternalServerError)
-		return
-	}
-	if !clienteExists {
-		http.Error(w, "El cliente especificado no existe", http.StatusBadRequest)
-		return
-	}
-	if !empleadoExists {
-		http.Error(w, "El empleado especificado no existe", http.StatusBadRequest)
-		return
-	}
-
-	var id int
-	err := db.QueryRow(`
-		INSERT INTO venta (id_cliente, id_empleado, fecha_venta, precio)
-		VALUES ($1, $2, $3, $4)
-		RETURNING id_venta
-	`, req.IDCliente, req.IDEmpleado, req.FechaVenta, req.Precio).Scan(&id)
+	id, err := crearVentaConProcedure(req)
 	if err != nil {
 		http.Error(w, "Error al crear venta", http.StatusInternalServerError)
 		return
@@ -110,33 +72,27 @@ func CreateVentaHandler(w http.ResponseWriter, r *http.Request) {
 func UpdateVentaHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(mux.Vars(r)["id"])
 	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
+		http.Error(w, "ID invalido", http.StatusBadRequest)
 		return
 	}
 
 	var req models.VentaRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Body inválido", http.StatusBadRequest)
+		http.Error(w, "Body invalido", http.StatusBadRequest)
 		return
 	}
 
-	if req.IDCliente == 0 || req.IDEmpleado == 0 || req.FechaVenta == "" || req.Precio == "" {
-		http.Error(w, "Faltan campos obligatorios", http.StatusBadRequest)
-		return
-	}
-
-	result, err := db.Exec(`
-		UPDATE venta
-		SET id_cliente = $1, id_empleado = $2, fecha_venta = $3, precio = $4
-		WHERE id_venta = $5
-	`, req.IDCliente, req.IDEmpleado, req.FechaVenta, req.Precio, id)
-	if err != nil {
+	result := gormDB.Model(&models.VentaEntity{}).Where("id_venta = ?", id).Updates(map[string]interface{}{
+		"id_cliente":  req.IDCliente,
+		"id_empleado": req.IDEmpleado,
+		"fecha_venta": req.FechaVenta,
+		"precio":      req.Precio,
+	})
+	if result.Error != nil {
 		http.Error(w, "Error al actualizar venta", http.StatusInternalServerError)
 		return
 	}
-
-	rowsAffected, _ := result.RowsAffected()
-	if rowsAffected == 0 {
+	if result.RowsAffected == 0 {
 		http.Error(w, "Venta no encontrada", http.StatusNotFound)
 		return
 	}
@@ -148,49 +104,31 @@ func UpdateVentaHandler(w http.ResponseWriter, r *http.Request) {
 func DeleteVentaHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(mux.Vars(r)["id"])
 	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
+		http.Error(w, "ID invalido", http.StatusBadRequest)
 		return
 	}
 
-	tx, err := db.Begin()
-	if err != nil {
-		http.Error(w, "Error al iniciar transacción", http.StatusInternalServerError)
-		return
-	}
-
-	var exists bool
-	if err := tx.QueryRow(`SELECT EXISTS(SELECT 1 FROM venta WHERE id_venta = $1)`, id).Scan(&exists); err != nil {
-		tx.Rollback()
-		http.Error(w, "Error al verificar venta", http.StatusInternalServerError)
-		return
-	}
-	if !exists {
-		tx.Rollback()
-		http.Error(w, "Venta no encontrada", http.StatusNotFound)
-		return
-	}
-
-	if _, err := tx.Exec(`DELETE FROM envio WHERE id_venta = $1`, id); err != nil {
-		tx.Rollback()
-		http.Error(w, "Error al eliminar envíos asociados", http.StatusInternalServerError)
-		return
-	}
-
-	if _, err := tx.Exec(`DELETE FROM detalle_venta WHERE id_venta = $1`, id); err != nil {
-		tx.Rollback()
-		http.Error(w, "Error al eliminar detalles de venta", http.StatusInternalServerError)
-		return
-	}
-
-	if _, err := tx.Exec(`DELETE FROM venta WHERE id_venta = $1`, id); err != nil {
-		tx.Rollback()
+	if err := gormDB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("id_venta = ?", id).Delete(&models.EnvioEntity{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("id_venta = ?", id).Delete(&models.DetalleVentaEntity{}).Error; err != nil {
+			return err
+		}
+		result := tx.Where("id_venta = ?", id).Delete(&models.VentaEntity{})
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected == 0 {
+			return gorm.ErrRecordNotFound
+		}
+		return nil
+	}); err != nil {
+		if isNotFound(err) {
+			http.Error(w, "Venta no encontrada", http.StatusNotFound)
+			return
+		}
 		http.Error(w, "Error al eliminar venta", http.StatusInternalServerError)
-		return
-	}
-
-	if err := tx.Commit(); err != nil {
-		tx.Rollback()
-		http.Error(w, "Error al confirmar transacción", http.StatusInternalServerError)
 		return
 	}
 
@@ -199,28 +137,11 @@ func DeleteVentaHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetDetallesVentaHandler(w http.ResponseWriter, r *http.Request) {
-	rows, err := db.Query(`
-		SELECT dv.id_detalle_venta, dv.id_venta, dv.id_pintura,
-		       p.titulo AS titulo_pintura, dv.cantidad, dv.precio_unitario
-		FROM detalle_venta dv
-		JOIN pintura p ON dv.id_pintura = p.id_pintura
-	`)
+	detalles, err := loadDetallesVenta("")
 	if err != nil {
 		http.Error(w, "Error al obtener detalles de venta", http.StatusInternalServerError)
 		return
 	}
-	defer rows.Close()
-
-	detalles := []models.DetalleVenta{}
-	for rows.Next() {
-		var d models.DetalleVenta
-		if err := rows.Scan(&d.ID, &d.IDVenta, &d.IDPintura, &d.TituloPintura, &d.Cantidad, &d.PrecioUnitario); err != nil {
-			http.Error(w, "Error al leer detalle de venta", http.StatusInternalServerError)
-			return
-		}
-		detalles = append(detalles, d)
-	}
-
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(detalles)
 }
@@ -228,61 +149,35 @@ func GetDetallesVentaHandler(w http.ResponseWriter, r *http.Request) {
 func GetDetalleVentaByIDHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(mux.Vars(r)["id"])
 	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
+		http.Error(w, "ID invalido", http.StatusBadRequest)
 		return
 	}
 
-	var d models.DetalleVenta
-	err = db.QueryRow(`
-		SELECT dv.id_detalle_venta, dv.id_venta, dv.id_pintura,
-		       p.titulo AS titulo_pintura, dv.cantidad, dv.precio_unitario
-		FROM detalle_venta dv
-		JOIN pintura p ON dv.id_pintura = p.id_pintura
-		WHERE dv.id_detalle_venta = $1
-	`, id).Scan(&d.ID, &d.IDVenta, &d.IDPintura, &d.TituloPintura, &d.Cantidad, &d.PrecioUnitario)
-	if err == sql.ErrNoRows {
-		http.Error(w, "Detalle de venta no encontrado", http.StatusNotFound)
-		return
-	}
+	detalles, err := loadDetallesVenta("WHERE dv.id_detalle_venta = ?", id)
 	if err != nil {
 		http.Error(w, "Error al obtener detalle de venta", http.StatusInternalServerError)
 		return
 	}
-
+	if len(detalles) == 0 {
+		http.Error(w, "Detalle de venta no encontrado", http.StatusNotFound)
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(d)
+	json.NewEncoder(w).Encode(detalles[0])
 }
 
 func GetDetallesByVentaHandler(w http.ResponseWriter, r *http.Request) {
 	idVenta, err := strconv.Atoi(mux.Vars(r)["id_venta"])
 	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
+		http.Error(w, "ID invalido", http.StatusBadRequest)
 		return
 	}
 
-	rows, err := db.Query(`
-		SELECT dv.id_detalle_venta, dv.id_venta, dv.id_pintura,
-		       p.titulo AS titulo_pintura, dv.cantidad, dv.precio_unitario
-		FROM detalle_venta dv
-		JOIN pintura p ON dv.id_pintura = p.id_pintura
-		WHERE dv.id_venta = $1
-	`, idVenta)
+	detalles, err := loadDetallesVenta("WHERE dv.id_venta = ?", idVenta)
 	if err != nil {
 		http.Error(w, "Error al obtener detalles de venta", http.StatusInternalServerError)
 		return
 	}
-	defer rows.Close()
-
-	detalles := []models.DetalleVenta{}
-	for rows.Next() {
-		var d models.DetalleVenta
-		if err := rows.Scan(&d.ID, &d.IDVenta, &d.IDPintura, &d.TituloPintura, &d.Cantidad, &d.PrecioUnitario); err != nil {
-			http.Error(w, "Error al leer detalle de venta", http.StatusInternalServerError)
-			return
-		}
-		detalles = append(detalles, d)
-	}
-
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(detalles)
 }
@@ -290,79 +185,50 @@ func GetDetallesByVentaHandler(w http.ResponseWriter, r *http.Request) {
 func CreateDetalleVentaHandler(w http.ResponseWriter, r *http.Request) {
 	var req models.DetalleVentaRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Body inválido", http.StatusBadRequest)
+		http.Error(w, "Body invalido", http.StatusBadRequest)
 		return
 	}
 
-	if req.IDVenta == 0 || req.IDPintura == 0 || req.Cantidad == 0 || req.PrecioUnitario == "" {
-		http.Error(w, "Faltan campos obligatorios", http.StatusBadRequest)
-		return
+	record := models.DetalleVentaEntity{
+		IDVenta:        req.IDVenta,
+		IDPintura:      req.IDPintura,
+		Cantidad:       req.Cantidad,
+		PrecioUnitario: req.PrecioUnitario,
 	}
-
-	var ventaExists, pinturaExists bool
-	if err := db.QueryRow(`SELECT EXISTS(SELECT 1 FROM venta WHERE id_venta = $1)`, req.IDVenta).Scan(&ventaExists); err != nil {
-		http.Error(w, "Error al verificar venta", http.StatusInternalServerError)
-		return
-	}
-	if err := db.QueryRow(`SELECT EXISTS(SELECT 1 FROM pintura WHERE id_pintura = $1)`, req.IDPintura).Scan(&pinturaExists); err != nil {
-		http.Error(w, "Error al verificar pintura", http.StatusInternalServerError)
-		return
-	}
-	if !ventaExists {
-		http.Error(w, "La venta especificada no existe", http.StatusBadRequest)
-		return
-	}
-	if !pinturaExists {
-		http.Error(w, "La pintura especificada no existe", http.StatusBadRequest)
-		return
-	}
-
-	var id int
-	err := db.QueryRow(`
-		INSERT INTO detalle_venta (id_venta, id_pintura, cantidad, precio_unitario)
-		VALUES ($1, $2, $3, $4)
-		RETURNING id_detalle_venta
-	`, req.IDVenta, req.IDPintura, req.Cantidad, req.PrecioUnitario).Scan(&id)
-	if err != nil {
+	if err := gormDB.Create(&record).Error; err != nil {
 		http.Error(w, "Error al crear detalle de venta", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]int{"id_detalle_venta": id})
+	json.NewEncoder(w).Encode(map[string]int{"id_detalle_venta": record.IDDetalleVenta})
 }
 
 func UpdateDetalleVentaHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(mux.Vars(r)["id"])
 	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
+		http.Error(w, "ID invalido", http.StatusBadRequest)
 		return
 	}
 
 	var req models.DetalleVentaRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Body inválido", http.StatusBadRequest)
+		http.Error(w, "Body invalido", http.StatusBadRequest)
 		return
 	}
 
-	if req.IDVenta == 0 || req.IDPintura == 0 || req.Cantidad == 0 || req.PrecioUnitario == "" {
-		http.Error(w, "Faltan campos obligatorios", http.StatusBadRequest)
-		return
-	}
-
-	result, err := db.Exec(`
-		UPDATE detalle_venta
-		SET id_venta = $1, id_pintura = $2, cantidad = $3, precio_unitario = $4
-		WHERE id_detalle_venta = $5
-	`, req.IDVenta, req.IDPintura, req.Cantidad, req.PrecioUnitario, id)
-	if err != nil {
+	result := gormDB.Model(&models.DetalleVentaEntity{}).Where("id_detalle_venta = ?", id).Updates(map[string]interface{}{
+		"id_venta":        req.IDVenta,
+		"id_pintura":      req.IDPintura,
+		"cantidad":        req.Cantidad,
+		"precio_unitario": req.PrecioUnitario,
+	})
+	if result.Error != nil {
 		http.Error(w, "Error al actualizar detalle de venta", http.StatusInternalServerError)
 		return
 	}
-
-	rowsAffected, _ := result.RowsAffected()
-	if rowsAffected == 0 {
+	if result.RowsAffected == 0 {
 		http.Error(w, "Detalle de venta no encontrado", http.StatusNotFound)
 		return
 	}
@@ -374,22 +240,60 @@ func UpdateDetalleVentaHandler(w http.ResponseWriter, r *http.Request) {
 func DeleteDetalleVentaHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(mux.Vars(r)["id"])
 	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
+		http.Error(w, "ID invalido", http.StatusBadRequest)
 		return
 	}
 
-	result, err := db.Exec(`DELETE FROM detalle_venta WHERE id_detalle_venta = $1`, id)
-	if err != nil {
+	result := gormDB.Where("id_detalle_venta = ?", id).Delete(&models.DetalleVentaEntity{})
+	if result.Error != nil {
 		http.Error(w, "Error al eliminar detalle de venta", http.StatusInternalServerError)
 		return
 	}
-
-	rowsAffected, _ := result.RowsAffected()
-	if rowsAffected == 0 {
+	if result.RowsAffected == 0 {
 		http.Error(w, "Detalle de venta no encontrado", http.StatusNotFound)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"mensaje": "Detalle de venta eliminado"})
+}
+
+func crearVentaConProcedure(req models.VentaRequest) (int, error) {
+	type result struct {
+		IDVenta int `gorm:"column:id_venta"`
+	}
+	var res result
+	err := gormDB.Raw("SELECT * FROM sp_crear_venta(?, ?, ?, ?)", req.IDCliente, req.IDEmpleado, req.FechaVenta, req.Precio).Scan(&res).Error
+	if err == nil && res.IDVenta != 0 {
+		return res.IDVenta, nil
+	}
+
+	record := models.VentaEntity{
+		IDCliente:  req.IDCliente,
+		IDEmpleado: req.IDEmpleado,
+		FechaVenta: req.FechaVenta,
+		Precio:     req.Precio,
+	}
+	if err := gormDB.Create(&record).Error; err != nil {
+		return 0, err
+	}
+	return record.IDVenta, nil
+}
+
+func loadDetallesVenta(where string, args ...interface{}) ([]models.DetalleVenta, error) {
+	var detalles []models.DetalleVenta
+	query := `
+		SELECT
+			dv.id_detalle_venta,
+			dv.id_venta,
+			dv.id_pintura,
+			p.titulo AS titulo_pintura,
+			dv.cantidad,
+			dv.precio_unitario::text AS precio_unitario
+		FROM detalle_venta dv
+		JOIN pintura p ON dv.id_pintura = p.id_pintura
+		` + where + `
+		ORDER BY dv.id_detalle_venta
+	`
+	return detalles, gormDB.Raw(query, args...).Scan(&detalles).Error
 }

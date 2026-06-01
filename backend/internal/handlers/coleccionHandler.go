@@ -1,34 +1,25 @@
 package handlers
 
 import (
-	"database/sql"
 	"encoding/json"
 	"magic-bag-gallery-api/internal/models"
 	"net/http"
 	"strconv"
 
 	"github.com/gorilla/mux"
+	"gorm.io/gorm"
 )
 
 func GetColeccionesHandler(w http.ResponseWriter, r *http.Request) {
-	rows, err := db.Query(`
-		SELECT id_coleccion, nombre, descripcion, exclusiva, fecha_lanzamiento
-		FROM coleccion
-	`)
-	if err != nil {
+	var records []models.ColeccionEntity
+	if err := gormDB.Order("id_coleccion").Find(&records).Error; err != nil {
 		http.Error(w, "Error al obtener colecciones", http.StatusInternalServerError)
 		return
 	}
-	defer rows.Close()
 
-	colecciones := []models.Coleccion{}
-	for rows.Next() {
-		var c models.Coleccion
-		if err := rows.Scan(&c.ID, &c.Nombre, &c.Descripcion, &c.Exclusiva, &c.FechaLanzamiento); err != nil {
-			http.Error(w, "Error al leer colección", http.StatusInternalServerError)
-			return
-		}
-		colecciones = append(colecciones, c)
+	colecciones := make([]models.Coleccion, 0, len(records))
+	for _, record := range records {
+		colecciones = append(colecciones, coleccionFromEntity(record))
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -38,203 +29,155 @@ func GetColeccionesHandler(w http.ResponseWriter, r *http.Request) {
 func GetColeccionByIDHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(mux.Vars(r)["id"])
 	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
+		http.Error(w, "ID invalido", http.StatusBadRequest)
 		return
 	}
 
-	var c models.Coleccion
-	err = db.QueryRow(`
-		SELECT id_coleccion, nombre, descripcion, exclusiva, fecha_lanzamiento
-		FROM coleccion
-		WHERE id_coleccion = $1
-	`, id).Scan(&c.ID, &c.Nombre, &c.Descripcion, &c.Exclusiva, &c.FechaLanzamiento)
-	if err == sql.ErrNoRows {
-		http.Error(w, "Colección no encontrada", http.StatusNotFound)
-		return
-	}
-	if err != nil {
-		http.Error(w, "Error al obtener colección", http.StatusInternalServerError)
+	var record models.ColeccionEntity
+	if err := gormDB.First(&record, "id_coleccion = ?", id).Error; err != nil {
+		if isNotFound(err) {
+			http.Error(w, "Coleccion no encontrada", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "Error al obtener coleccion", http.StatusInternalServerError)
 		return
 	}
 
-	pinturasRows, err := db.Query(`
-		SELECT p.titulo
-		FROM pintura p
-		WHERE p.id_coleccion = $1
-	`, id)
-	if err != nil {
+	coleccion := coleccionFromEntity(record)
+	if err := gormDB.Model(&models.PinturaEntity{}).
+		Where("id_coleccion = ?", id).
+		Pluck("titulo", &coleccion.Pinturas).Error; err != nil {
 		http.Error(w, "Error al obtener pinturas", http.StatusInternalServerError)
 		return
 	}
-	defer pinturasRows.Close()
-
-	for pinturasRows.Next() {
-		var titulo string
-		if err := pinturasRows.Scan(&titulo); err != nil {
-			http.Error(w, "Error al leer pintura", http.StatusInternalServerError)
-			return
-		}
-		c.Pinturas = append(c.Pinturas, titulo)
-	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(c)
+	json.NewEncoder(w).Encode(coleccion)
 }
 
 func CreateColeccionHandler(w http.ResponseWriter, r *http.Request) {
 	var req models.ColeccionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Body inválido", http.StatusBadRequest)
+		http.Error(w, "Body invalido", http.StatusBadRequest)
 		return
 	}
 
-	tx, err := db.Begin()
-	if err != nil {
-		http.Error(w, "Error al iniciar transacción", http.StatusInternalServerError)
-		return
+	record := models.ColeccionEntity{
+		Nombre:           req.Nombre,
+		Descripcion:      req.Descripcion,
+		Exclusiva:        req.Exclusiva,
+		FechaLanzamiento: req.FechaLanzamiento,
 	}
 
-	var id int
-	err = tx.QueryRow(`
-		INSERT INTO coleccion (nombre, descripcion, exclusiva, fecha_lanzamiento)
-		VALUES ($1, $2, $3, $4)
-		RETURNING id_coleccion
-	`, req.Nombre, req.Descripcion, req.Exclusiva, req.FechaLanzamiento).Scan(&id)
-	if err != nil {
-		tx.Rollback()
-		http.Error(w, "Error al crear colección", http.StatusInternalServerError)
-		return
-	}
-
-	for _, pinturaID := range req.IDPinturas {
-		_, err := tx.Exec(`
-			UPDATE pintura SET id_coleccion = $1 WHERE id_pintura = $2
-		`, id, pinturaID)
-		if err != nil {
-			tx.Rollback()
-			http.Error(w, "Error al asignar pintura a la colección", http.StatusInternalServerError)
-			return
+	if err := gormDB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(&record).Error; err != nil {
+			return err
 		}
-	}
-
-	if err := tx.Commit(); err != nil {
-		tx.Rollback()
-		http.Error(w, "Error al confirmar transacción", http.StatusInternalServerError)
+		return asignarPinturasAColeccion(tx, record.IDColeccion, req.IDPinturas)
+	}); err != nil {
+		http.Error(w, "Error al crear coleccion", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]int{"id_coleccion": id})
+	json.NewEncoder(w).Encode(map[string]int{"id_coleccion": record.IDColeccion})
 }
 
 func UpdateColeccionHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(mux.Vars(r)["id"])
 	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
+		http.Error(w, "ID invalido", http.StatusBadRequest)
 		return
 	}
 
 	var req models.ColeccionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Body inválido", http.StatusBadRequest)
+		http.Error(w, "Body invalido", http.StatusBadRequest)
 		return
 	}
 
-	tx, err := db.Begin()
-	if err != nil {
-		http.Error(w, "Error al iniciar transacción", http.StatusInternalServerError)
-		return
-	}
-
-	_, err = tx.Exec(`
-		UPDATE coleccion SET nombre = $1, descripcion = $2, exclusiva = $3, fecha_lanzamiento = $4
-		WHERE id_coleccion = $5
-	`, req.Nombre, req.Descripcion, req.Exclusiva, req.FechaLanzamiento, id)
-	if err != nil {
-		tx.Rollback()
-		http.Error(w, "Error al actualizar colección", http.StatusInternalServerError)
-		return
-	}
-
-	_, err = tx.Exec(`
-		UPDATE pintura SET id_coleccion = NULL WHERE id_coleccion = $1
-	`, id)
-	if err != nil {
-		tx.Rollback()
-		http.Error(w, "Error al desasignar pinturas", http.StatusInternalServerError)
-		return
-	}
-
-	for _, pinturaID := range req.IDPinturas {
-		_, err := tx.Exec(`
-			UPDATE pintura SET id_coleccion = $1 WHERE id_pintura = $2
-		`, id, pinturaID)
-		if err != nil {
-			tx.Rollback()
-			http.Error(w, "Error al asignar pintura a la colección", http.StatusInternalServerError)
+	if err := gormDB.Transaction(func(tx *gorm.DB) error {
+		result := tx.Model(&models.ColeccionEntity{}).Where("id_coleccion = ?", id).Updates(map[string]interface{}{
+			"nombre":            req.Nombre,
+			"descripcion":       req.Descripcion,
+			"exclusiva":         req.Exclusiva,
+			"fecha_lanzamiento": req.FechaLanzamiento,
+		})
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected == 0 {
+			return gorm.ErrRecordNotFound
+		}
+		if err := tx.Model(&models.PinturaEntity{}).
+			Where("id_coleccion = ?", id).
+			Update("id_coleccion", nil).Error; err != nil {
+			return err
+		}
+		return asignarPinturasAColeccion(tx, id, req.IDPinturas)
+	}); err != nil {
+		if isNotFound(err) {
+			http.Error(w, "Coleccion no encontrada", http.StatusNotFound)
 			return
 		}
-	}
-
-	if err := tx.Commit(); err != nil {
-		tx.Rollback()
-		http.Error(w, "Error al confirmar transacción", http.StatusInternalServerError)
+		http.Error(w, "Error al actualizar coleccion", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"mensaje": "Colección actualizada"})
+	json.NewEncoder(w).Encode(map[string]string{"mensaje": "Coleccion actualizada"})
 }
 
 func DeleteColeccionHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(mux.Vars(r)["id"])
 	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
+		http.Error(w, "ID invalido", http.StatusBadRequest)
 		return
 	}
 
-	tx, err := db.Begin()
-	if err != nil {
-		http.Error(w, "Error al iniciar transacción", http.StatusInternalServerError)
-		return
-	}
-
-	var exists bool
-	err = tx.QueryRow(`SELECT EXISTS(SELECT 1 FROM coleccion WHERE id_coleccion = $1)`, id).Scan(&exists)
-	if err != nil {
-		tx.Rollback()
-		http.Error(w, "Error al verificar colección", http.StatusInternalServerError)
-		return
-	}
-	if !exists {
-		tx.Rollback()
-		http.Error(w, "Colección no encontrada", http.StatusNotFound)
-		return
-	}
-
-	_, err = tx.Exec(`
-		UPDATE pintura SET id_coleccion = NULL WHERE id_coleccion = $1
-	`, id)
-	if err != nil {
-		tx.Rollback()
-		http.Error(w, "Error al desasignar pinturas", http.StatusInternalServerError)
-		return
-	}
-
-	_, err = tx.Exec(`DELETE FROM coleccion WHERE id_coleccion = $1`, id)
-	if err != nil {
-		tx.Rollback()
-		http.Error(w, "Error al eliminar colección", http.StatusInternalServerError)
-		return
-	}
-
-	if err := tx.Commit(); err != nil {
-		tx.Rollback()
-		http.Error(w, "Error al confirmar transacción", http.StatusInternalServerError)
+	if err := gormDB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&models.PinturaEntity{}).
+			Where("id_coleccion = ?", id).
+			Update("id_coleccion", nil).Error; err != nil {
+			return err
+		}
+		result := tx.Where("id_coleccion = ?", id).Delete(&models.ColeccionEntity{})
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected == 0 {
+			return gorm.ErrRecordNotFound
+		}
+		return nil
+	}); err != nil {
+		if isNotFound(err) {
+			http.Error(w, "Coleccion no encontrada", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "Error al eliminar coleccion", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"mensaje": "Colección eliminada"})
+	json.NewEncoder(w).Encode(map[string]string{"mensaje": "Coleccion eliminada"})
+}
+
+func coleccionFromEntity(record models.ColeccionEntity) models.Coleccion {
+	return models.Coleccion{
+		ID:               record.IDColeccion,
+		Nombre:           record.Nombre,
+		Descripcion:      record.Descripcion,
+		Exclusiva:        record.Exclusiva,
+		FechaLanzamiento: record.FechaLanzamiento,
+	}
+}
+
+func asignarPinturasAColeccion(tx *gorm.DB, idColeccion int, pinturas []int) error {
+	if len(pinturas) == 0 {
+		return nil
+	}
+	return tx.Model(&models.PinturaEntity{}).
+		Where("id_pintura IN ?", pinturas).
+		Update("id_coleccion", idColeccion).Error
 }

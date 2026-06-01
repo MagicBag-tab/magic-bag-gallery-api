@@ -2,12 +2,14 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
-	"os"
-	"time"
 
-	"github.com/golang-jwt/jwt/v5"
+	"magic-bag-gallery-api/internal/middleware"
+	"magic-bag-gallery-api/internal/models"
+
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 type LoginRequest struct {
@@ -33,62 +35,86 @@ type RegisterEmpleadoRequest struct {
 	TipoEmpleado      string `json:"tipo_empleado"`
 }
 
-func generarToken(idUsuario int, role string) (string, error) {
-	secret := []byte(os.Getenv("JWT_SECRET"))
-	claims := jwt.MapClaims{
-		"sub":  idUsuario,
-		"role": role,
-		"exp":  time.Now().Add(24 * time.Hour).Unix(),
-		"iat":  time.Now().Unix(),
-	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(secret)
+type authResponse struct {
+	Role         string `json:"role"`
+	IDUsuario    int    `json:"id_usuario"`
+	IDCliente    int    `json:"id_cliente,omitempty"`
+	IDEmpleado   int    `json:"id_empleado,omitempty"`
+	Nombre       string `json:"nombre"`
+	TipoEmpleado string `json:"tipo_empleado,omitempty"`
 }
 
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	var req LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Body inválido", http.StatusBadRequest)
+		http.Error(w, "Body invalido", http.StatusBadRequest)
 		return
 	}
 
-	var idUsuario int
-	var hashContrasena string
-	err := db.QueryRow(`
-		SELECT id_usuario, contrasena FROM usuario WHERE correo_electronico = $1
-	`, req.Correo).Scan(&idUsuario, &hashContrasena)
-	if err != nil {
-		http.Error(w, "Credenciales inválidas", http.StatusUnauthorized)
+	var usuario models.UsuarioEntity
+	if err := gormDB.Where("correo_electronico = ?", req.Correo).First(&usuario).Error; err != nil {
+		http.Error(w, "Credenciales invalidas", http.StatusUnauthorized)
 		return
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(hashContrasena), []byte(req.Contrasena)); err != nil {
-		http.Error(w, "Credenciales inválidas", http.StatusUnauthorized)
+	if err := bcrypt.CompareHashAndPassword([]byte(usuario.Contrasena), []byte(req.Contrasena)); err != nil {
+		http.Error(w, "Credenciales invalidas", http.StatusUnauthorized)
 		return
 	}
 
-	var role string
-	var dummy int
-	if err := db.QueryRow(`SELECT id_empleado FROM empleado WHERE id_usuario = $1`, idUsuario).Scan(&dummy); err == nil {
+	role := "cliente"
+	tipoEmpleado := ""
+	idEmpleado := 0
+	var empleado models.EmpleadoEntity
+	if err := gormDB.Where("id_usuario = ?", usuario.IDUsuario).First(&empleado).Error; err == nil {
 		role = "empleado"
-	} else {
-		role = "cliente"
+		tipoEmpleado = empleado.TipoEmpleado
+		idEmpleado = empleado.IDEmpleado
 	}
 
-	tokenStr, err := generarToken(idUsuario, role)
-	if err != nil {
-		http.Error(w, "Error al generar token", http.StatusInternalServerError)
+	if err := middleware.SaveSessionUser(w, r, usuario.IDUsuario, role, usuario.Nombre, tipoEmpleado); err != nil {
+		http.Error(w, "Error al guardar sesion", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"token": tokenStr, "role": role})
+	json.NewEncoder(w).Encode(authResponse{
+		Role:         role,
+		IDUsuario:    usuario.IDUsuario,
+		IDEmpleado:   idEmpleado,
+		Nombre:       usuario.Nombre,
+		TipoEmpleado: tipoEmpleado,
+	})
+}
+
+func LogoutHandler(w http.ResponseWriter, r *http.Request) {
+	if err := middleware.ClearSession(w, r); err != nil {
+		http.Error(w, "Error al cerrar sesion", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"mensaje": "Sesion cerrada"})
+}
+
+func SessionHandler(w http.ResponseWriter, r *http.Request) {
+	idUsuario, _ := r.Context().Value(middleware.UserIDKey).(int)
+	role, _ := r.Context().Value(middleware.RoleKey).(string)
+	nombre, _ := r.Context().Value(middleware.NombreKey).(string)
+	tipoEmpleado, _ := r.Context().Value(middleware.TipoEmpleadoKey).(string)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(authResponse{
+		Role:         role,
+		IDUsuario:    idUsuario,
+		Nombre:       nombre,
+		TipoEmpleado: tipoEmpleado,
+	})
 }
 
 func RegisterClienteHandler(w http.ResponseWriter, r *http.Request) {
 	var req RegisterClienteRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Body inválido", http.StatusBadRequest)
+		http.Error(w, "Body invalido", http.StatusBadRequest)
 		return
 	}
 
@@ -102,64 +128,35 @@ func RegisterClienteHandler(w http.ResponseWriter, r *http.Request) {
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(req.Contrasena), 12)
 	if err != nil {
-		http.Error(w, "Error al procesar contraseña", http.StatusInternalServerError)
+		http.Error(w, "Error al procesar contrasena", http.StatusInternalServerError)
 		return
 	}
 
-	tx, err := db.Begin()
+	idUsuario, idCliente, err := registrarClienteConProcedure(req, string(hash))
 	if err != nil {
-		http.Error(w, "Error al iniciar transacción", http.StatusInternalServerError)
+		http.Error(w, "El correo ya esta registrado", http.StatusConflict)
 		return
 	}
 
-	var idUsuario int
-	err = tx.QueryRow(`
-		INSERT INTO usuario (nombre, apellido, correo_electronico, telefono, contrasena)
-		VALUES ($1, $2, $3, $4, $5)
-		RETURNING id_usuario
-	`, req.Nombre, req.Apellido, req.CorreoElectronico, req.Telefono, string(hash)).Scan(&idUsuario)
-	if err != nil {
-		tx.Rollback()
-		http.Error(w, "El correo ya está registrado", http.StatusConflict)
-		return
-	}
-
-	var idCliente int
-	err = tx.QueryRow(`
-		INSERT INTO cliente (id_usuario, tipo_cliente) VALUES ($1, $2) RETURNING id_cliente
-	`, idUsuario, req.TipoCliente).Scan(&idCliente)
-	if err != nil {
-		tx.Rollback()
-		http.Error(w, "Error al crear cliente", http.StatusInternalServerError)
-		return
-	}
-
-	if err := tx.Commit(); err != nil {
-		tx.Rollback()
-		http.Error(w, "Error al confirmar transacción", http.StatusInternalServerError)
-		return
-	}
-
-	tokenStr, err := generarToken(idUsuario, "cliente")
-	if err != nil {
-		http.Error(w, "Error al generar token", http.StatusInternalServerError)
+	if err := middleware.SaveSessionUser(w, r, idUsuario, "cliente", req.Nombre, ""); err != nil {
+		http.Error(w, "Error al guardar sesion", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"token":      tokenStr,
-		"role":       "cliente",
-		"id_usuario": idUsuario,
-		"id_cliente": idCliente,
+	json.NewEncoder(w).Encode(authResponse{
+		Role:      "cliente",
+		IDUsuario: idUsuario,
+		IDCliente: idCliente,
+		Nombre:    req.Nombre,
 	})
 }
 
 func RegisterEmpleadoHandler(w http.ResponseWriter, r *http.Request) {
 	var req RegisterEmpleadoRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Body inválido", http.StatusBadRequest)
+		http.Error(w, "Body invalido", http.StatusBadRequest)
 		return
 	}
 
@@ -170,56 +167,101 @@ func RegisterEmpleadoHandler(w http.ResponseWriter, r *http.Request) {
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(req.Contrasena), 12)
 	if err != nil {
-		http.Error(w, "Error al procesar contraseña", http.StatusInternalServerError)
+		http.Error(w, "Error al procesar contrasena", http.StatusInternalServerError)
 		return
 	}
 
-	tx, err := db.Begin()
+	idUsuario, idEmpleado, err := registrarEmpleadoConProcedure(req, string(hash))
 	if err != nil {
-		http.Error(w, "Error al iniciar transacción", http.StatusInternalServerError)
-		return
-	}
-
-	var idUsuario int
-	err = tx.QueryRow(`
-		INSERT INTO usuario (nombre, apellido, correo_electronico, telefono, contrasena)
-		VALUES ($1, $2, $3, $4, $5)
-		RETURNING id_usuario
-	`, req.Nombre, req.Apellido, req.CorreoElectronico, req.Telefono, string(hash)).Scan(&idUsuario)
-	if err != nil {
-		tx.Rollback()
-		http.Error(w, "El correo ya está registrado", http.StatusConflict)
-		return
-	}
-
-	var idEmpleado int
-	err = tx.QueryRow(`
-		INSERT INTO empleado (id_usuario, tipo_empleado) VALUES ($1, $2) RETURNING id_empleado
-	`, idUsuario, req.TipoEmpleado).Scan(&idEmpleado)
-	if err != nil {
-		tx.Rollback()
-		http.Error(w, "Error al crear empleado", http.StatusInternalServerError)
-		return
-	}
-
-	if err := tx.Commit(); err != nil {
-		tx.Rollback()
-		http.Error(w, "Error al confirmar transacción", http.StatusInternalServerError)
-		return
-	}
-
-	tokenStr, err := generarToken(idUsuario, "empleado")
-	if err != nil {
-		http.Error(w, "Error al generar token", http.StatusInternalServerError)
+		http.Error(w, "El correo ya esta registrado", http.StatusConflict)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"token":       tokenStr,
-		"role":        "empleado",
-		"id_usuario":  idUsuario,
-		"id_empleado": idEmpleado,
+	json.NewEncoder(w).Encode(authResponse{
+		Role:         "empleado",
+		IDUsuario:    idUsuario,
+		IDEmpleado:   idEmpleado,
+		Nombre:       req.Nombre,
+		TipoEmpleado: req.TipoEmpleado,
 	})
+}
+
+func registrarClienteConProcedure(req RegisterClienteRequest, hash string) (int, int, error) {
+	type result struct {
+		IDUsuario int `gorm:"column:id_usuario"`
+		IDCliente int `gorm:"column:id_cliente"`
+	}
+	var res result
+	err := gormDB.Raw(
+		"SELECT * FROM sp_registrar_cliente(?, ?, ?, ?, ?, ?)",
+		req.Nombre, req.Apellido, req.CorreoElectronico, req.Telefono, hash, req.TipoCliente,
+	).Scan(&res).Error
+	if err == nil && res.IDUsuario != 0 && res.IDCliente != 0 {
+		return res.IDUsuario, res.IDCliente, nil
+	}
+
+	return registrarClienteGORM(req, hash)
+}
+
+func registrarClienteGORM(req RegisterClienteRequest, hash string) (int, int, error) {
+	var usuario models.UsuarioEntity
+	var cliente models.ClienteEntity
+	err := gormDB.Transaction(func(tx *gorm.DB) error {
+		usuario = models.UsuarioEntity{
+			Nombre:            req.Nombre,
+			Apellido:          req.Apellido,
+			CorreoElectronico: req.CorreoElectronico,
+			Telefono:          req.Telefono,
+			Contrasena:        hash,
+		}
+		if err := tx.Create(&usuario).Error; err != nil {
+			return err
+		}
+		cliente = models.ClienteEntity{IDUsuario: usuario.IDUsuario, TipoCliente: req.TipoCliente}
+		return tx.Create(&cliente).Error
+	})
+	return usuario.IDUsuario, cliente.IDCliente, err
+}
+
+func registrarEmpleadoConProcedure(req RegisterEmpleadoRequest, hash string) (int, int, error) {
+	type result struct {
+		IDUsuario  int `gorm:"column:id_usuario"`
+		IDEmpleado int `gorm:"column:id_empleado"`
+	}
+	var res result
+	err := gormDB.Raw(
+		"SELECT * FROM sp_registrar_empleado(?, ?, ?, ?, ?, ?)",
+		req.Nombre, req.Apellido, req.CorreoElectronico, req.Telefono, hash, req.TipoEmpleado,
+	).Scan(&res).Error
+	if err == nil && res.IDUsuario != 0 && res.IDEmpleado != 0 {
+		return res.IDUsuario, res.IDEmpleado, nil
+	}
+
+	return registrarEmpleadoGORM(req, hash)
+}
+
+func registrarEmpleadoGORM(req RegisterEmpleadoRequest, hash string) (int, int, error) {
+	var usuario models.UsuarioEntity
+	var empleado models.EmpleadoEntity
+	err := gormDB.Transaction(func(tx *gorm.DB) error {
+		usuario = models.UsuarioEntity{
+			Nombre:            req.Nombre,
+			Apellido:          req.Apellido,
+			CorreoElectronico: req.CorreoElectronico,
+			Telefono:          req.Telefono,
+			Contrasena:        hash,
+		}
+		if err := tx.Create(&usuario).Error; err != nil {
+			return err
+		}
+		empleado = models.EmpleadoEntity{IDUsuario: usuario.IDUsuario, TipoEmpleado: req.TipoEmpleado}
+		return tx.Create(&empleado).Error
+	})
+	return usuario.IDUsuario, empleado.IDEmpleado, err
+}
+
+func isNotFound(err error) bool {
+	return errors.Is(err, gorm.ErrRecordNotFound)
 }

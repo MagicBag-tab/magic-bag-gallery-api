@@ -1,40 +1,44 @@
 package handlers
 
 import (
-	"database/sql"
 	"encoding/json"
 	"magic-bag-gallery-api/internal/models"
 	"net/http"
 	"strconv"
 
 	"github.com/gorilla/mux"
+	"gorm.io/gorm"
 )
 
 func GetArtistasHandler(w http.ResponseWriter, r *http.Request) {
-	rows, err := db.Query(`
-		SELECT a.id_artista, a.nombre_completo, a.nacionalidad, a.id_reclutador,
-		       u.nombre || ' ' || u.apellido AS nombre_reclutador
-		FROM artista a
-		JOIN empleado e ON a.id_reclutador = e.id_empleado
-		JOIN usuario u ON e.id_usuario = u.id_usuario
-		ORDER BY a.nombre_completo
-	`)
+	var rows []struct {
+		ID               int    `gorm:"column:id_artista"`
+		NombreCompleto   string `gorm:"column:nombre_completo"`
+		Nacionalidad     string `gorm:"column:nacionalidad"`
+		IDReclutador     int    `gorm:"column:id_reclutador"`
+		NombreReclutador string `gorm:"column:nombre_reclutador"`
+	}
+
+	err := gormDB.Table("artista a").
+		Select("a.id_artista, a.nombre_completo, a.nacionalidad, a.id_reclutador, u.nombre || ' ' || u.apellido AS nombre_reclutador").
+		Joins("JOIN empleado e ON a.id_reclutador = e.id_empleado").
+		Joins("JOIN usuario u ON e.id_usuario = u.id_usuario").
+		Order("a.nombre_completo").
+		Scan(&rows).Error
 	if err != nil {
 		http.Error(w, "Error al obtener artistas", http.StatusInternalServerError)
 		return
 	}
-	defer rows.Close()
 
-	artistas := []models.Artista{}
-	for rows.Next() {
-		var a models.Artista
-		if err := rows.Scan(
-			&a.ID, &a.NombreCompleto, &a.Nacionalidad, &a.IDReclutador, &a.NombreReclutador,
-		); err != nil {
-			http.Error(w, "Error al leer artista", http.StatusInternalServerError)
-			return
-		}
-		artistas = append(artistas, a)
+	artistas := make([]models.Artista, 0, len(rows))
+	for _, row := range rows {
+		artistas = append(artistas, models.Artista{
+			ID:               row.ID,
+			NombreCompleto:   row.NombreCompleto,
+			Nacionalidad:     row.Nacionalidad,
+			IDReclutador:     row.IDReclutador,
+			NombreReclutador: row.NombreReclutador,
+		})
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -44,197 +48,125 @@ func GetArtistasHandler(w http.ResponseWriter, r *http.Request) {
 func GetArtistaByIDHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(mux.Vars(r)["id"])
 	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
+		http.Error(w, "ID invalido", http.StatusBadRequest)
 		return
 	}
 
-	var a models.Artista
-	err = db.QueryRow(`
-		SELECT a.id_artista, a.nombre_completo, a.nacionalidad, a.id_reclutador,
-		       u.nombre || ' ' || u.apellido AS nombre_reclutador
-		FROM artista a
-		JOIN empleado e ON a.id_reclutador = e.id_empleado
-		JOIN usuario u ON e.id_usuario = u.id_usuario
-		WHERE a.id_artista = $1
-	`, id).Scan(&a.ID, &a.NombreCompleto, &a.Nacionalidad, &a.IDReclutador, &a.NombreReclutador)
-	if err == sql.ErrNoRows {
+	var row struct {
+		ID               int    `gorm:"column:id_artista"`
+		NombreCompleto   string `gorm:"column:nombre_completo"`
+		Nacionalidad     string `gorm:"column:nacionalidad"`
+		IDReclutador     int    `gorm:"column:id_reclutador"`
+		NombreReclutador string `gorm:"column:nombre_reclutador"`
+	}
+
+	err = gormDB.Table("artista a").
+		Select("a.id_artista, a.nombre_completo, a.nacionalidad, a.id_reclutador, u.nombre || ' ' || u.apellido AS nombre_reclutador").
+		Joins("JOIN empleado e ON a.id_reclutador = e.id_empleado").
+		Joins("JOIN usuario u ON e.id_usuario = u.id_usuario").
+		Where("a.id_artista = ?", id).
+		Scan(&row).Error
+	if err != nil || row.ID == 0 {
 		http.Error(w, "Artista no encontrado", http.StatusNotFound)
 		return
 	}
-	if err != nil {
-		http.Error(w, "Error al obtener artista", http.StatusInternalServerError)
-		return
+
+	artista := models.Artista{
+		ID:               row.ID,
+		NombreCompleto:   row.NombreCompleto,
+		Nacionalidad:     row.Nacionalidad,
+		IDReclutador:     row.IDReclutador,
+		NombreReclutador: row.NombreReclutador,
 	}
 
-	pinturasRows, err := db.Query(`
-		SELECT p.titulo
-		FROM pintura p
-		WHERE p.id_artista = $1
-	`, id)
-	if err != nil {
+	if err := gormDB.Model(&models.PinturaEntity{}).Where("id_artista = ?", id).Pluck("titulo", &artista.Pinturas).Error; err != nil {
 		http.Error(w, "Error al obtener pinturas del artista", http.StatusInternalServerError)
 		return
 	}
-	defer pinturasRows.Close()
 
-	for pinturasRows.Next() {
-		var titulo string
-		if err := pinturasRows.Scan(&titulo); err != nil {
-			http.Error(w, "Error al leer pintura", http.StatusInternalServerError)
-			return
-		}
-		a.Pinturas = append(a.Pinturas, titulo)
-	}
-
-	coleccionesRows, err := db.Query(`
-		SELECT DISTINCT c.nombre
-		FROM coleccion c
-		JOIN pintura p ON p.id_coleccion = c.id_coleccion
-		WHERE p.id_artista = $1
-	`, id)
-	if err != nil {
+	if err := gormDB.Table("coleccion c").
+		Joins("JOIN pintura p ON p.id_coleccion = c.id_coleccion").
+		Where("p.id_artista = ?", id).
+		Distinct("c.nombre").
+		Pluck("c.nombre", &artista.Colecciones).Error; err != nil {
 		http.Error(w, "Error al obtener colecciones del artista", http.StatusInternalServerError)
 		return
 	}
-	defer coleccionesRows.Close()
-
-	for coleccionesRows.Next() {
-		var nombre string
-		if err := coleccionesRows.Scan(&nombre); err != nil {
-			http.Error(w, "Error al leer colección", http.StatusInternalServerError)
-			return
-		}
-		a.Colecciones = append(a.Colecciones, nombre)
-	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(a)
+	json.NewEncoder(w).Encode(artista)
 }
 
 func CreateArtistaHandler(w http.ResponseWriter, r *http.Request) {
 	var req models.ArtistaRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Body inválido", http.StatusBadRequest)
+		http.Error(w, "Body invalido", http.StatusBadRequest)
 		return
 	}
 
-	tx, err := db.Begin()
-	if err != nil {
-		http.Error(w, "Error al iniciar transacción", http.StatusInternalServerError)
-		return
-	}
-
-	var reclutadorExists bool
-	if err := tx.QueryRow(`
-		SELECT EXISTS(
-			SELECT 1 FROM empleado
-			WHERE id_empleado = $1 AND tipo_empleado = 'reclutador'
-		)
-	`, req.IDReclutador).Scan(&reclutadorExists); err != nil {
-		tx.Rollback()
-		http.Error(w, "Error al verificar reclutador", http.StatusInternalServerError)
-		return
-	}
-	if !reclutadorExists {
-		tx.Rollback()
+	if !reclutadorExiste(req.IDReclutador) {
 		http.Error(w, "El reclutador especificado no existe", http.StatusBadRequest)
 		return
 	}
 
-	var id int
-	err = tx.QueryRow(`
-		INSERT INTO artista (nombre_completo, nacionalidad, id_reclutador)
-		VALUES ($1, $2, $3)
-		RETURNING id_artista
-	`, req.NombreCompleto, req.Nacionalidad, req.IDReclutador).Scan(&id)
-	if err != nil {
-		tx.Rollback()
-		http.Error(w, "Error al crear artista", http.StatusInternalServerError)
-		return
+	record := models.ArtistaEntity{
+		NombreCompleto: req.NombreCompleto,
+		Nacionalidad:   req.Nacionalidad,
+		IDReclutador:   req.IDReclutador,
 	}
 
-	for _, pinturaID := range req.IDPinturas {
-		_, err := tx.Exec(`
-			UPDATE pintura SET id_artista = $1 WHERE id_pintura = $2
-		`, id, pinturaID)
-		if err != nil {
-			tx.Rollback()
-			http.Error(w, "Error al asignar pintura al artista", http.StatusInternalServerError)
-			return
+	if err := gormDB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(&record).Error; err != nil {
+			return err
 		}
-	}
-
-	if err := tx.Commit(); err != nil {
-		tx.Rollback()
-		http.Error(w, "Error al confirmar transacción", http.StatusInternalServerError)
+		return asignarPinturasAArtista(tx, record.IDArtista, req.IDPinturas)
+	}); err != nil {
+		http.Error(w, "Error al crear artista", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]int{"id_artista": id})
+	json.NewEncoder(w).Encode(map[string]int{"id_artista": record.IDArtista})
 }
 
 func UpdateArtistaHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(mux.Vars(r)["id"])
 	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
+		http.Error(w, "ID invalido", http.StatusBadRequest)
 		return
 	}
 
 	var req models.ArtistaRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Body inválido", http.StatusBadRequest)
+		http.Error(w, "Body invalido", http.StatusBadRequest)
 		return
 	}
 
-	tx, err := db.Begin()
-	if err != nil {
-		http.Error(w, "Error al iniciar transacción", http.StatusInternalServerError)
-		return
-	}
-
-	var reclutadorExists bool
-	if err := tx.QueryRow(`
-		SELECT EXISTS(
-			SELECT 1 FROM empleado
-			WHERE id_empleado = $1 AND tipo_empleado = 'reclutador'
-		)
-	`, req.IDReclutador).Scan(&reclutadorExists); err != nil {
-		tx.Rollback()
-		http.Error(w, "Error al verificar reclutador", http.StatusInternalServerError)
-		return
-	}
-	if !reclutadorExists {
-		tx.Rollback()
+	if !reclutadorExiste(req.IDReclutador) {
 		http.Error(w, "El reclutador especificado no existe", http.StatusBadRequest)
 		return
 	}
 
-	_, err = tx.Exec(`
-		UPDATE artista SET nombre_completo = $1, nacionalidad = $2, id_reclutador = $3
-		WHERE id_artista = $4
-	`, req.NombreCompleto, req.Nacionalidad, req.IDReclutador, id)
-	if err != nil {
-		tx.Rollback()
-		http.Error(w, "Error al actualizar artista", http.StatusInternalServerError)
-		return
-	}
-
-	for _, pinturaID := range req.IDPinturas {
-		_, err := tx.Exec(`
-			UPDATE pintura SET id_artista = $1 WHERE id_pintura = $2
-		`, id, pinturaID)
-		if err != nil {
-			tx.Rollback()
-			http.Error(w, "Error al asignar pintura al artista", http.StatusInternalServerError)
+	if err := gormDB.Transaction(func(tx *gorm.DB) error {
+		result := tx.Model(&models.ArtistaEntity{}).Where("id_artista = ?", id).Updates(map[string]interface{}{
+			"nombre_completo": req.NombreCompleto,
+			"nacionalidad":    req.Nacionalidad,
+			"id_reclutador":   req.IDReclutador,
+		})
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected == 0 {
+			return gorm.ErrRecordNotFound
+		}
+		return asignarPinturasAArtista(tx, id, req.IDPinturas)
+	}); err != nil {
+		if isNotFound(err) {
+			http.Error(w, "Artista no encontrado", http.StatusNotFound)
 			return
 		}
-	}
-
-	if err := tx.Commit(); err != nil {
-		tx.Rollback()
-		http.Error(w, "Error al confirmar transacción", http.StatusInternalServerError)
+		http.Error(w, "Error al actualizar artista", http.StatusInternalServerError)
 		return
 	}
 
@@ -245,59 +177,52 @@ func UpdateArtistaHandler(w http.ResponseWriter, r *http.Request) {
 func DeleteArtistaHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(mux.Vars(r)["id"])
 	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
+		http.Error(w, "ID invalido", http.StatusBadRequest)
 		return
 	}
 
-	tx, err := db.Begin()
-	if err != nil {
-		http.Error(w, "Error al iniciar transacción", http.StatusInternalServerError)
-		return
-	}
-
-	var exists bool
-	err = tx.QueryRow(`SELECT EXISTS(SELECT 1 FROM artista WHERE id_artista = $1)`, id).Scan(&exists)
-	if err != nil {
-		tx.Rollback()
-		http.Error(w, "Error al verificar artista", http.StatusInternalServerError)
-		return
-	}
-	if !exists {
-		tx.Rollback()
-		http.Error(w, "Artista no encontrado", http.StatusNotFound)
-		return
-	}
-
-	_, err = tx.Exec(`
-		DELETE FROM pintura_tecnica
-		WHERE id_pintura IN (SELECT id_pintura FROM pintura WHERE id_artista = $1)
-	`, id)
-	if err != nil {
-		tx.Rollback()
-		http.Error(w, "Error al eliminar técnicas relacionadas", http.StatusInternalServerError)
-		return
-	}
-
-	_, err = tx.Exec(`DELETE FROM pintura WHERE id_artista = $1`, id)
-	if err != nil {
-		tx.Rollback()
-		http.Error(w, "Error al eliminar pinturas del artista", http.StatusInternalServerError)
-		return
-	}
-
-	_, err = tx.Exec(`DELETE FROM artista WHERE id_artista = $1`, id)
-	if err != nil {
-		tx.Rollback()
+	if err := gormDB.Transaction(func(tx *gorm.DB) error {
+		pinturas := tx.Model(&models.PinturaEntity{}).Select("id_pintura").Where("id_artista = ?", id)
+		if err := tx.Where("id_pintura IN (?)", pinturas).Delete(&models.PinturaTecnicaEntity{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("id_artista = ?", id).Delete(&models.PinturaEntity{}).Error; err != nil {
+			return err
+		}
+		result := tx.Where("id_artista = ?", id).Delete(&models.ArtistaEntity{})
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected == 0 {
+			return gorm.ErrRecordNotFound
+		}
+		return nil
+	}); err != nil {
+		if isNotFound(err) {
+			http.Error(w, "Artista no encontrado", http.StatusNotFound)
+			return
+		}
 		http.Error(w, "Error al eliminar artista", http.StatusInternalServerError)
-		return
-	}
-
-	if err := tx.Commit(); err != nil {
-		tx.Rollback()
-		http.Error(w, "Error al confirmar transacción", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"mensaje": "Artista eliminado"})
+}
+
+func reclutadorExiste(idReclutador int) bool {
+	var total int64
+	err := gormDB.Model(&models.EmpleadoEntity{}).
+		Where("id_empleado = ? AND tipo_empleado = ?", idReclutador, "reclutador").
+		Count(&total).Error
+	return err == nil && total > 0
+}
+
+func asignarPinturasAArtista(tx *gorm.DB, idArtista int, pinturas []int) error {
+	if len(pinturas) == 0 {
+		return nil
+	}
+	return tx.Model(&models.PinturaEntity{}).
+		Where("id_pintura IN ?", pinturas).
+		Update("id_artista", idArtista).Error
 }

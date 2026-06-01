@@ -1,45 +1,21 @@
 package handlers
 
 import (
-	"database/sql"
 	"encoding/json"
 	"magic-bag-gallery-api/internal/models"
 	"net/http"
 	"strconv"
 
 	"github.com/gorilla/mux"
+	"gorm.io/gorm"
 )
 
 func GetToursHandler(w http.ResponseWriter, r *http.Request) {
-	rows, err := db.Query(`
-		SELECT t.id_tour, t.id_guia,
-		       u.nombre || ' ' || u.apellido AS nombre_guia,
-		       t.nombre, t.descripcion,
-		       t.fecha_inicio, t.fecha_fin, t.horario, t.precio
-		FROM tour t
-		JOIN empleado e ON t.id_guia = e.id_empleado
-		JOIN usuario  u ON e.id_usuario = u.id_usuario
-	`)
+	tours, err := loadTours("")
 	if err != nil {
 		http.Error(w, "Error al obtener tours", http.StatusInternalServerError)
 		return
 	}
-	defer rows.Close()
-
-	tours := []models.Tour{}
-	for rows.Next() {
-		var t models.Tour
-		if err := rows.Scan(
-			&t.ID, &t.IDGuia, &t.NombreGuia,
-			&t.Nombre, &t.Descripcion,
-			&t.FechaInicio, &t.FechaFin, &t.Horario, &t.Precio,
-		); err != nil {
-			http.Error(w, "Error al leer tour", http.StatusInternalServerError)
-			return
-		}
-		tours = append(tours, t)
-	}
-
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(tours)
 }
@@ -47,42 +23,28 @@ func GetToursHandler(w http.ResponseWriter, r *http.Request) {
 func GetTourByIDHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(mux.Vars(r)["id"])
 	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
+		http.Error(w, "ID invalido", http.StatusBadRequest)
 		return
 	}
 
-	var t models.Tour
-	err = db.QueryRow(`
-		SELECT t.id_tour, t.id_guia,
-		       u.nombre || ' ' || u.apellido AS nombre_guia,
-		       t.nombre, t.descripcion,
-		       t.fecha_inicio, t.fecha_fin, t.horario, t.precio
-		FROM tour t
-		JOIN empleado e ON t.id_guia = e.id_empleado
-		JOIN usuario  u ON e.id_usuario = u.id_usuario
-		WHERE t.id_tour = $1
-	`, id).Scan(
-		&t.ID, &t.IDGuia, &t.NombreGuia,
-		&t.Nombre, &t.Descripcion,
-		&t.FechaInicio, &t.FechaFin, &t.Horario, &t.Precio,
-	)
-	if err == sql.ErrNoRows {
-		http.Error(w, "Tour no encontrado", http.StatusNotFound)
-		return
-	}
+	tours, err := loadTours("WHERE t.id_tour = ?", id)
 	if err != nil {
 		http.Error(w, "Error al obtener tour", http.StatusInternalServerError)
 		return
 	}
+	if len(tours) == 0 {
+		http.Error(w, "Tour no encontrado", http.StatusNotFound)
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(t)
+	json.NewEncoder(w).Encode(tours[0])
 }
 
 func CreateTourHandler(w http.ResponseWriter, r *http.Request) {
 	var req models.TourRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Body inválido", http.StatusBadRequest)
+		http.Error(w, "Body invalido", http.StatusBadRequest)
 		return
 	}
 
@@ -91,42 +53,40 @@ func CreateTourHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var exists bool
-	if err := db.QueryRow(`SELECT EXISTS(SELECT 1 FROM empleado WHERE id_empleado = $1)`, req.IDGuia).Scan(&exists); err != nil {
-		http.Error(w, "Error al verificar guía", http.StatusInternalServerError)
-		return
-	}
-	if !exists {
-		http.Error(w, "El guía especificado no existe", http.StatusBadRequest)
+	if !empleadoExiste(req.IDGuia) {
+		http.Error(w, "El guia especificado no existe", http.StatusBadRequest)
 		return
 	}
 
-	var id int
-	err := db.QueryRow(`
-		INSERT INTO tour (id_guia, nombre, descripcion, fecha_inicio, fecha_fin, horario, precio)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
-		RETURNING id_tour
-	`, req.IDGuia, req.Nombre, req.Descripcion, req.FechaInicio, req.FechaFin, req.Horario, req.Precio).Scan(&id)
-	if err != nil {
+	record := models.TourEntity{
+		IDGuia:      req.IDGuia,
+		Nombre:      req.Nombre,
+		Descripcion: req.Descripcion,
+		FechaInicio: req.FechaInicio,
+		FechaFin:    req.FechaFin,
+		Horario:     req.Horario,
+		Precio:      req.Precio,
+	}
+	if err := gormDB.Create(&record).Error; err != nil {
 		http.Error(w, "Error al crear tour", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]int{"id_tour": id})
+	json.NewEncoder(w).Encode(map[string]int{"id_tour": record.IDTour})
 }
 
 func UpdateTourHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(mux.Vars(r)["id"])
 	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
+		http.Error(w, "ID invalido", http.StatusBadRequest)
 		return
 	}
 
 	var req models.TourRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Body inválido", http.StatusBadRequest)
+		http.Error(w, "Body invalido", http.StatusBadRequest)
 		return
 	}
 
@@ -135,19 +95,20 @@ func UpdateTourHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := db.Exec(`
-		UPDATE tour
-		SET id_guia = $1, nombre = $2, descripcion = $3,
-		    fecha_inicio = $4, fecha_fin = $5, horario = $6, precio = $7
-		WHERE id_tour = $8
-	`, req.IDGuia, req.Nombre, req.Descripcion, req.FechaInicio, req.FechaFin, req.Horario, req.Precio, id)
-	if err != nil {
+	result := gormDB.Model(&models.TourEntity{}).Where("id_tour = ?", id).Updates(map[string]interface{}{
+		"id_guia":      req.IDGuia,
+		"nombre":       req.Nombre,
+		"descripcion":  req.Descripcion,
+		"fecha_inicio": req.FechaInicio,
+		"fecha_fin":    req.FechaFin,
+		"horario":      req.Horario,
+		"precio":       req.Precio,
+	})
+	if result.Error != nil {
 		http.Error(w, "Error al actualizar tour", http.StatusInternalServerError)
 		return
 	}
-
-	rowsAffected, _ := result.RowsAffected()
-	if rowsAffected == 0 {
+	if result.RowsAffected == 0 {
 		http.Error(w, "Tour no encontrado", http.StatusNotFound)
 		return
 	}
@@ -159,43 +120,28 @@ func UpdateTourHandler(w http.ResponseWriter, r *http.Request) {
 func DeleteTourHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(mux.Vars(r)["id"])
 	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
+		http.Error(w, "ID invalido", http.StatusBadRequest)
 		return
 	}
 
-	tx, err := db.Begin()
-	if err != nil {
-		http.Error(w, "Error al iniciar transacción", http.StatusInternalServerError)
-		return
-	}
-
-	var exists bool
-	if err := tx.QueryRow(`SELECT EXISTS(SELECT 1 FROM tour WHERE id_tour = $1)`, id).Scan(&exists); err != nil {
-		tx.Rollback()
-		http.Error(w, "Error al verificar tour", http.StatusInternalServerError)
-		return
-	}
-	if !exists {
-		tx.Rollback()
-		http.Error(w, "Tour no encontrado", http.StatusNotFound)
-		return
-	}
-
-	if _, err := tx.Exec(`DELETE FROM cliente_tour WHERE id_tour = $1`, id); err != nil {
-		tx.Rollback()
-		http.Error(w, "Error al eliminar reservas del tour", http.StatusInternalServerError)
-		return
-	}
-
-	if _, err := tx.Exec(`DELETE FROM tour WHERE id_tour = $1`, id); err != nil {
-		tx.Rollback()
+	if err := gormDB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("id_tour = ?", id).Delete(&models.ClienteTourEntity{}).Error; err != nil {
+			return err
+		}
+		result := tx.Where("id_tour = ?", id).Delete(&models.TourEntity{})
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected == 0 {
+			return gorm.ErrRecordNotFound
+		}
+		return nil
+	}); err != nil {
+		if isNotFound(err) {
+			http.Error(w, "Tour no encontrado", http.StatusNotFound)
+			return
+		}
 		http.Error(w, "Error al eliminar tour", http.StatusInternalServerError)
-		return
-	}
-
-	if err := tx.Commit(); err != nil {
-		tx.Rollback()
-		http.Error(w, "Error al confirmar transacción", http.StatusInternalServerError)
 		return
 	}
 
@@ -204,32 +150,24 @@ func DeleteTourHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetReservasHandler(w http.ResponseWriter, r *http.Request) {
-	rows, err := db.Query(`
-		SELECT ct.id_cliente_tour, ct.id_cliente, ct.id_tour,
-		       uc.nombre || ' ' || uc.apellido AS nombre_cliente,
-		       t.nombre AS nombre_tour, ct.fecha_reserva
+	var reservas []models.Reserva
+	err := gormDB.Raw(`
+		SELECT
+			ct.id_cliente_tour,
+			ct.id_cliente,
+			ct.id_tour,
+			uc.nombre || ' ' || uc.apellido AS nombre_cliente,
+			t.nombre AS nombre_tour,
+			TO_CHAR(ct.fecha_reserva, 'YYYY-MM-DD') AS fecha_reserva
 		FROM cliente_tour ct
 		JOIN cliente c ON ct.id_cliente = c.id_cliente
 		JOIN usuario uc ON c.id_usuario = uc.id_usuario
 		JOIN tour t ON ct.id_tour = t.id_tour
 		ORDER BY ct.fecha_reserva DESC
-	`)
+	`).Scan(&reservas).Error
 	if err != nil {
 		http.Error(w, "Error al obtener reservas", http.StatusInternalServerError)
 		return
-	}
-	defer rows.Close()
-
-	reservas := []models.Reserva{}
-	for rows.Next() {
-		var res models.Reserva
-		if err := rows.Scan(
-			&res.ID, &res.IDCliente, &res.IDTour, &res.NombreCliente, &res.NombreTour, &res.FechaReserva,
-		); err != nil {
-			http.Error(w, "Error al leer reserva", http.StatusInternalServerError)
-			return
-		}
-		reservas = append(reservas, res)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -239,53 +177,53 @@ func GetReservasHandler(w http.ResponseWriter, r *http.Request) {
 func GetReservaByIDHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(mux.Vars(r)["id"])
 	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
+		http.Error(w, "ID invalido", http.StatusBadRequest)
 		return
 	}
 
-	var res models.Reserva
-	err = db.QueryRow(`
-		SELECT ct.id_cliente_tour, ct.id_cliente, ct.id_tour,
-		       uc.nombre || ' ' || uc.apellido AS nombre_cliente,
-		       t.nombre AS nombre_tour, ct.fecha_reserva
+	var reserva models.Reserva
+	err = gormDB.Raw(`
+		SELECT
+			ct.id_cliente_tour,
+			ct.id_cliente,
+			ct.id_tour,
+			uc.nombre || ' ' || uc.apellido AS nombre_cliente,
+			t.nombre AS nombre_tour,
+			TO_CHAR(ct.fecha_reserva, 'YYYY-MM-DD') AS fecha_reserva
 		FROM cliente_tour ct
 		JOIN cliente c ON ct.id_cliente = c.id_cliente
 		JOIN usuario uc ON c.id_usuario = uc.id_usuario
 		JOIN tour t ON ct.id_tour = t.id_tour
-		WHERE ct.id_cliente_tour = $1
-	`, id).Scan(&res.ID, &res.IDCliente, &res.IDTour, &res.NombreCliente, &res.NombreTour, &res.FechaReserva)
-	if err == sql.ErrNoRows {
+		WHERE ct.id_cliente_tour = ?
+	`, id).Scan(&reserva).Error
+	if err != nil || reserva.ID == 0 {
 		http.Error(w, "Reserva no encontrada", http.StatusNotFound)
-		return
-	}
-	if err != nil {
-		http.Error(w, "Error al obtener reserva", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(res)
+	json.NewEncoder(w).Encode(reserva)
 }
 
 func CreateReservaHandler(w http.ResponseWriter, r *http.Request) {
 	var req models.ReservaRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Body inválido", http.StatusBadRequest)
+		http.Error(w, "Body invalido", http.StatusBadRequest)
 		return
 	}
 
 	if req.IDCliente == 0 {
 		idUsuario, ok := getUserIDFromContext(r)
 		if !ok {
-			http.Error(w, "Token inválido", http.StatusUnauthorized)
+			http.Error(w, "Sesion invalida", http.StatusUnauthorized)
 			return
 		}
-		if err := db.QueryRow(`
-			SELECT id_cliente FROM cliente WHERE id_usuario = $1 LIMIT 1
-		`, idUsuario).Scan(&req.IDCliente); err != nil {
+		var cliente models.ClienteEntity
+		if err := gormDB.First(&cliente, "id_usuario = ?", idUsuario).Error; err != nil {
 			http.Error(w, "Cliente no encontrado", http.StatusNotFound)
 			return
 		}
+		req.IDCliente = cliente.IDCliente
 	}
 
 	if req.IDCliente == 0 || req.IDTour == 0 || req.FechaReserva == "" {
@@ -293,30 +231,7 @@ func CreateReservaHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var clienteExists, tourExists bool
-	if err := db.QueryRow(`SELECT EXISTS(SELECT 1 FROM cliente WHERE id_cliente = $1)`, req.IDCliente).Scan(&clienteExists); err != nil {
-		http.Error(w, "Error al verificar cliente", http.StatusInternalServerError)
-		return
-	}
-	if err := db.QueryRow(`SELECT EXISTS(SELECT 1 FROM tour WHERE id_tour = $1)`, req.IDTour).Scan(&tourExists); err != nil {
-		http.Error(w, "Error al verificar tour", http.StatusInternalServerError)
-		return
-	}
-	if !clienteExists {
-		http.Error(w, "El cliente especificado no existe", http.StatusBadRequest)
-		return
-	}
-	if !tourExists {
-		http.Error(w, "El tour especificado no existe", http.StatusBadRequest)
-		return
-	}
-
-	var id int
-	err := db.QueryRow(`
-		INSERT INTO cliente_tour (id_cliente, id_tour, fecha_reserva)
-		VALUES ($1, $2, $3)
-		RETURNING id_cliente_tour
-	`, req.IDCliente, req.IDTour, req.FechaReserva).Scan(&id)
+	id, err := crearReservaConProcedure(req)
 	if err != nil {
 		http.Error(w, "Error al crear reserva", http.StatusInternalServerError)
 		return
@@ -330,33 +245,26 @@ func CreateReservaHandler(w http.ResponseWriter, r *http.Request) {
 func UpdateReservaHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(mux.Vars(r)["id"])
 	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
+		http.Error(w, "ID invalido", http.StatusBadRequest)
 		return
 	}
 
 	var req models.ReservaRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Body inválido", http.StatusBadRequest)
+		http.Error(w, "Body invalido", http.StatusBadRequest)
 		return
 	}
 
-	if req.IDCliente == 0 || req.IDTour == 0 || req.FechaReserva == "" {
-		http.Error(w, "Faltan campos obligatorios", http.StatusBadRequest)
-		return
-	}
-
-	result, err := db.Exec(`
-		UPDATE cliente_tour
-		SET id_cliente = $1, id_tour = $2, fecha_reserva = $3
-		WHERE id_cliente_tour = $4
-	`, req.IDCliente, req.IDTour, req.FechaReserva, id)
-	if err != nil {
+	result := gormDB.Model(&models.ClienteTourEntity{}).Where("id_cliente_tour = ?", id).Updates(map[string]interface{}{
+		"id_cliente":    req.IDCliente,
+		"id_tour":       req.IDTour,
+		"fecha_reserva": req.FechaReserva,
+	})
+	if result.Error != nil {
 		http.Error(w, "Error al actualizar reserva", http.StatusInternalServerError)
 		return
 	}
-
-	rowsAffected, _ := result.RowsAffected()
-	if rowsAffected == 0 {
+	if result.RowsAffected == 0 {
 		http.Error(w, "Reserva no encontrada", http.StatusNotFound)
 		return
 	}
@@ -368,22 +276,69 @@ func UpdateReservaHandler(w http.ResponseWriter, r *http.Request) {
 func DeleteReservaHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(mux.Vars(r)["id"])
 	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
+		http.Error(w, "ID invalido", http.StatusBadRequest)
 		return
 	}
 
-	result, err := db.Exec(`DELETE FROM cliente_tour WHERE id_cliente_tour = $1`, id)
-	if err != nil {
+	result := gormDB.Where("id_cliente_tour = ?", id).Delete(&models.ClienteTourEntity{})
+	if result.Error != nil {
 		http.Error(w, "Error al eliminar reserva", http.StatusInternalServerError)
 		return
 	}
-
-	rowsAffected, _ := result.RowsAffected()
-	if rowsAffected == 0 {
+	if result.RowsAffected == 0 {
 		http.Error(w, "Reserva no encontrada", http.StatusNotFound)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"mensaje": "Reserva eliminada"})
+}
+
+func loadTours(where string, args ...interface{}) ([]models.Tour, error) {
+	query := `
+		SELECT
+			t.id_tour,
+			t.id_guia,
+			u.nombre || ' ' || u.apellido AS nombre_guia,
+			t.nombre,
+			t.descripcion,
+			TO_CHAR(t.fecha_inicio, 'YYYY-MM-DD') AS fecha_inicio,
+			TO_CHAR(t.fecha_fin, 'YYYY-MM-DD') AS fecha_fin,
+			t.horario,
+			t.precio::text AS precio
+		FROM tour t
+		JOIN empleado e ON t.id_guia = e.id_empleado
+		JOIN usuario u ON e.id_usuario = u.id_usuario
+		` + where + `
+		ORDER BY t.fecha_inicio, t.id_tour
+	`
+	var tours []models.Tour
+	return tours, gormDB.Raw(query, args...).Scan(&tours).Error
+}
+
+func empleadoExiste(idEmpleado int) bool {
+	var total int64
+	err := gormDB.Model(&models.EmpleadoEntity{}).Where("id_empleado = ?", idEmpleado).Count(&total).Error
+	return err == nil && total > 0
+}
+
+func crearReservaConProcedure(req models.ReservaRequest) (int, error) {
+	type result struct {
+		IDClienteTour int `gorm:"column:id_cliente_tour"`
+	}
+	var res result
+	err := gormDB.Raw("SELECT * FROM sp_crear_reserva(?, ?, ?)", req.IDCliente, req.IDTour, req.FechaReserva).Scan(&res).Error
+	if err == nil && res.IDClienteTour != 0 {
+		return res.IDClienteTour, nil
+	}
+
+	record := models.ClienteTourEntity{
+		IDCliente:    req.IDCliente,
+		IDTour:       req.IDTour,
+		FechaReserva: req.FechaReserva,
+	}
+	if err := gormDB.Create(&record).Error; err != nil {
+		return 0, err
+	}
+	return record.IDClienteTour, nil
 }

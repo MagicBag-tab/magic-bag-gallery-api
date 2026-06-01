@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"database/sql"
 	"encoding/json"
 	"magic-bag-gallery-api/internal/models"
 	"net/http"
@@ -9,41 +8,27 @@ import (
 
 	"github.com/gorilla/mux"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 func GetUsuariosHandler(w http.ResponseWriter, r *http.Request) {
-	rows, err := db.Query(`
-		SELECT u.id_usuario, u.nombre, u.apellido, u.correo_electronico, u.telefono,
-		       e.id_empleado, e.tipo_empleado
+	var usuarios []models.Usuario
+	err := gormDB.Raw(`
+		SELECT
+			u.id_usuario,
+			u.nombre,
+			u.apellido,
+			u.correo_electronico,
+			u.telefono,
+			e.id_empleado,
+			e.tipo_empleado
 		FROM usuario u
 		LEFT JOIN empleado e ON e.id_usuario = u.id_usuario
 		ORDER BY u.nombre, u.apellido
-	`)
+	`).Scan(&usuarios).Error
 	if err != nil {
 		http.Error(w, "Error al obtener usuarios", http.StatusInternalServerError)
 		return
-	}
-	defer rows.Close()
-
-	usuarios := []models.Usuario{}
-	for rows.Next() {
-		var u models.Usuario
-		var idEmpleado sql.NullInt64
-		var tipoEmpleado sql.NullString
-		if err := rows.Scan(
-			&u.ID, &u.Nombre, &u.Apellido, &u.CorreoElectronico, &u.Telefono,
-			&idEmpleado, &tipoEmpleado,
-		); err != nil {
-			http.Error(w, "Error al leer usuario", http.StatusInternalServerError)
-			return
-		}
-		if idEmpleado.Valid {
-			u.IDEmpleado = int(idEmpleado.Int64)
-		}
-		if tipoEmpleado.Valid {
-			u.TipoEmpleado = tipoEmpleado.String
-		}
-		usuarios = append(usuarios, u)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -53,46 +38,37 @@ func GetUsuariosHandler(w http.ResponseWriter, r *http.Request) {
 func GetUsuarioByIDHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(mux.Vars(r)["id"])
 	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
+		http.Error(w, "ID invalido", http.StatusBadRequest)
 		return
 	}
 
-	var u models.Usuario
-	var idEmpleado sql.NullInt64
-	var tipoEmpleado sql.NullString
-	err = db.QueryRow(`
-		SELECT u.id_usuario, u.nombre, u.apellido, u.correo_electronico, u.telefono,
-		       e.id_empleado, e.tipo_empleado
+	var usuario models.Usuario
+	err = gormDB.Raw(`
+		SELECT
+			u.id_usuario,
+			u.nombre,
+			u.apellido,
+			u.correo_electronico,
+			u.telefono,
+			e.id_empleado,
+			e.tipo_empleado
 		FROM usuario u
 		LEFT JOIN empleado e ON e.id_usuario = u.id_usuario
-		WHERE u.id_usuario = $1
-	`, id).Scan(
-		&u.ID, &u.Nombre, &u.Apellido, &u.CorreoElectronico, &u.Telefono,
-		&idEmpleado, &tipoEmpleado,
-	)
-	if err == sql.ErrNoRows {
+		WHERE u.id_usuario = ?
+	`, id).Scan(&usuario).Error
+	if err != nil || usuario.ID == 0 {
 		http.Error(w, "Usuario no encontrado", http.StatusNotFound)
 		return
 	}
-	if err != nil {
-		http.Error(w, "Error al obtener usuario", http.StatusInternalServerError)
-		return
-	}
-	if idEmpleado.Valid {
-		u.IDEmpleado = int(idEmpleado.Int64)
-	}
-	if tipoEmpleado.Valid {
-		u.TipoEmpleado = tipoEmpleado.String
-	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(u)
+	json.NewEncoder(w).Encode(usuario)
 }
 
 func CreateUsuarioHandler(w http.ResponseWriter, r *http.Request) {
 	var req models.UsuarioRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Body inválido", http.StatusBadRequest)
+		http.Error(w, "Body invalido", http.StatusBadRequest)
 		return
 	}
 
@@ -103,36 +79,37 @@ func CreateUsuarioHandler(w http.ResponseWriter, r *http.Request) {
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(req.Contrasena), 12)
 	if err != nil {
-		http.Error(w, "Error al procesar contraseña", http.StatusInternalServerError)
+		http.Error(w, "Error al procesar contrasena", http.StatusInternalServerError)
 		return
 	}
 
-	var id int
-	err = db.QueryRow(`
-		INSERT INTO usuario (nombre, apellido, correo_electronico, telefono, contrasena)
-		VALUES ($1, $2, $3, $4, $5)
-		RETURNING id_usuario
-	`, req.Nombre, req.Apellido, req.CorreoElectronico, req.Telefono, string(hash)).Scan(&id)
-	if err != nil {
-		http.Error(w, "El correo ya está registrado", http.StatusConflict)
+	record := models.UsuarioEntity{
+		Nombre:            req.Nombre,
+		Apellido:          req.Apellido,
+		CorreoElectronico: req.CorreoElectronico,
+		Telefono:          req.Telefono,
+		Contrasena:        string(hash),
+	}
+	if err := gormDB.Create(&record).Error; err != nil {
+		http.Error(w, "El correo ya esta registrado", http.StatusConflict)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]int{"id_usuario": id})
+	json.NewEncoder(w).Encode(map[string]int{"id_usuario": record.IDUsuario})
 }
 
 func UpdateUsuarioHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(mux.Vars(r)["id"])
 	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
+		http.Error(w, "ID invalido", http.StatusBadRequest)
 		return
 	}
 
 	var req models.UsuarioRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Body inválido", http.StatusBadRequest)
+		http.Error(w, "Body invalido", http.StatusBadRequest)
 		return
 	}
 
@@ -141,24 +118,28 @@ func UpdateUsuarioHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	updates := map[string]interface{}{
+		"nombre":             req.Nombre,
+		"apellido":           req.Apellido,
+		"correo_electronico": req.CorreoElectronico,
+		"telefono":           req.Telefono,
+	}
 	if req.Contrasena != "" {
 		hash, err := bcrypt.GenerateFromPassword([]byte(req.Contrasena), 12)
 		if err != nil {
-			http.Error(w, "Error al procesar contraseña", http.StatusInternalServerError)
+			http.Error(w, "Error al procesar contrasena", http.StatusInternalServerError)
 			return
 		}
-		_, err = db.Exec(`
-			UPDATE usuario SET nombre = $1, apellido = $2, correo_electronico = $3, telefono = $4, contrasena = $5
-			WHERE id_usuario = $6
-		`, req.Nombre, req.Apellido, req.CorreoElectronico, req.Telefono, string(hash), id)
-	} else {
-		_, err = db.Exec(`
-			UPDATE usuario SET nombre = $1, apellido = $2, correo_electronico = $3, telefono = $4
-			WHERE id_usuario = $5
-		`, req.Nombre, req.Apellido, req.CorreoElectronico, req.Telefono, id)
+		updates["contrasena"] = string(hash)
 	}
-	if err != nil {
+
+	result := gormDB.Model(&models.UsuarioEntity{}).Where("id_usuario = ?", id).Updates(updates)
+	if result.Error != nil {
 		http.Error(w, "Error al actualizar usuario", http.StatusInternalServerError)
+		return
+	}
+	if result.RowsAffected == 0 {
+		http.Error(w, "Usuario no encontrado", http.StatusNotFound)
 		return
 	}
 
@@ -169,40 +150,31 @@ func UpdateUsuarioHandler(w http.ResponseWriter, r *http.Request) {
 func DeleteUsuarioHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(mux.Vars(r)["id"])
 	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
+		http.Error(w, "ID invalido", http.StatusBadRequest)
 		return
 	}
 
-	tx, err := db.Begin()
-	if err != nil {
-		http.Error(w, "Error al iniciar transacción", http.StatusInternalServerError)
-		return
-	}
-
-	_, err = tx.Exec(`DELETE FROM cliente WHERE id_usuario = $1`, id)
-	if err != nil {
-		tx.Rollback()
-		http.Error(w, "Error al eliminar cliente asociado", http.StatusInternalServerError)
-		return
-	}
-
-	_, err = tx.Exec(`DELETE FROM empleado WHERE id_usuario = $1`, id)
-	if err != nil {
-		tx.Rollback()
-		http.Error(w, "Error al eliminar empleado asociado", http.StatusInternalServerError)
-		return
-	}
-
-	_, err = tx.Exec(`DELETE FROM usuario WHERE id_usuario = $1`, id)
-	if err != nil {
-		tx.Rollback()
+	if err := gormDB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("id_usuario = ?", id).Delete(&models.ClienteEntity{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("id_usuario = ?", id).Delete(&models.EmpleadoEntity{}).Error; err != nil {
+			return err
+		}
+		result := tx.Where("id_usuario = ?", id).Delete(&models.UsuarioEntity{})
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected == 0 {
+			return gorm.ErrRecordNotFound
+		}
+		return nil
+	}); err != nil {
+		if isNotFound(err) {
+			http.Error(w, "Usuario no encontrado", http.StatusNotFound)
+			return
+		}
 		http.Error(w, "Error al eliminar usuario", http.StatusInternalServerError)
-		return
-	}
-
-	if err := tx.Commit(); err != nil {
-		tx.Rollback()
-		http.Error(w, "Error al confirmar transacción", http.StatusInternalServerError)
 		return
 	}
 
