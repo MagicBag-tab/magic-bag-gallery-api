@@ -1,7 +1,7 @@
 package models
 
 type Envio struct {
-	ID             int    `json:"id_envio"`
+	ID             int    `json:"id_envio" gorm:"column:id_envio"`
 	IDVenta        int    `json:"id_venta"`
 	DireccionEnvio string `json:"direccion_envio"`
 	FechaEnvio     string `json:"fecha_envio"`

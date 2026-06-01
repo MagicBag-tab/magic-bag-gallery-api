@@ -1,7 +1,7 @@
 package models
 
 type Tour struct {
-	ID          int    `json:"id_tour"`
+	ID          int    `json:"id_tour" gorm:"column:id_tour"`
 	IDGuia      int    `json:"id_guia"`
 	NombreGuia  string `json:"nombre_guia,omitempty"`
 	Nombre      string `json:"nombre"`
@@ -23,7 +23,7 @@ type TourRequest struct {
 }
 
 type Reserva struct {
-	ID            int    `json:"id_cliente_tour"`
+	ID            int    `json:"id_cliente_tour" gorm:"column:id_cliente_tour"`
 	IDCliente     int    `json:"id_cliente"`
 	IDTour        int    `json:"id_tour"`
 	NombreCliente string `json:"nombre_cliente,omitempty"`
