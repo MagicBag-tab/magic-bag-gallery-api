@@ -1,4 +1,4 @@
--- Proyecto 3: roles granulares y operaciones criticas en PL/pgSQL.
+-- Proyecto 3: roles y permisos.
 
 CREATE OR REPLACE FUNCTION sp_registrar_cliente(
     p_nombre VARCHAR,
