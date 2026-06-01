@@ -9,10 +9,24 @@ Aplicación web completa para gestionar el inventario y las ventas de una galer�
 | Capa        | Tecnología                                          |
 |-------------|-----------------------------------------------------|
 | Frontend    | React 18, React Router v6, Recharts, CSS Modules    |
-| Backend     | Go 1.25, Gorilla Mux, JWT (golang-jwt/jwt v5)       |
+| Backend     | Go 1.25, Gorilla Mux, GORM v2, gorilla/sessions     |
 | Base datos  | PostgreSQL 16                                       |
 | Despliegue  | Docker & Docker Compose                             |
 | Calidad     | ESLint, Vitest, @testing-library/react              |
+
+---
+
+## Proyecto 3
+
+Esta rama `proyecto-3` extiende el Proyecto 2 con:
+
+- CRUD del backend migrado a GORM v2 (`gorm.io/gorm` + `gorm.io/driver/postgres`).
+- Autenticacion con cookie de sesion (`gorilla/sessions`) y rutas protegidas por rol.
+- Funciones PL/pgSQL para operaciones criticas: registro de clientes/empleados, reservas, ventas y eliminacion de pinturas.
+- 5 roles de base de datos: `mbg_catalogo`, `mbg_cliente`, `mbg_guia`, `mbg_asesor`, `mbg_reclutador`.
+- Script SQL de inicializacion en `db/zz_proyecto3_roles_procedures.sql`; Docker Compose ya monta `./db` en `/docker-entrypoint-initdb.d`.
+
+> Si ya existe un volumen de PostgreSQL de una corrida anterior, reiniciar con `docker compose down -v && docker compose up` para ejecutar los scripts nuevos.
 
 ---
 
@@ -63,6 +77,7 @@ POSTGRES_DB=proy2db
 DB_HOST=database
 DB_PORT=5432
 JWT_SECRET=your_super_secret_jwt_key_here_change_in_production
+SESSION_SECRET=your_super_secret_session_key_here_change_in_production
 ```
 
 ---
@@ -136,19 +151,21 @@ npm run build    # Build de producción
 
 > **Base URL**: `http://localhost:8888/api`
 >
-> Autenticación: Bearer token JWT en header `Authorization: Bearer <token>`
+> Autenticacion: cookie de sesion HTTP-only creada por `/login`. El frontend envia la cookie automaticamente en las peticiones protegidas.
 
 ### Autenticación
 
 | Método | Ruta                       | Auth | Descripción                        | Body (JSON)                                                                 |
 |--------|----------------------------|------|------------------------------------|-----------------------------------------------------------------------------|
-| POST   | `/login`                   | No   | Inicia sesión, devuelve JWT        | `{ "correo_electronico": "", "contrasena": "" }`                            |
+| POST   | `/login`                   | No   | Inicia sesion y crea cookie HTTP-only | `{ "correo_electronico": "", "contrasena": "" }`                         |
+| POST   | `/logout`                  | No   | Cierra la sesion del navegador     | N/A                                                                         |
+| GET    | `/session`                 | Sesion | Devuelve la sesion activa        | N/A                                                                         |
 | POST   | `/register/cliente`        | No   | Registra un nuevo cliente          | `{ "nombre", "apellido", "correo_electronico", "telefono", "contrasena" }`  |
 | POST   | `/auth/register/empleado`  | Empleado | Registra un nuevo empleado    | `{ "nombre", "apellido", "correo_electronico", "telefono", "contrasena", "tipo_empleado" }` |
 
 **Respuesta de `/login`:**
 ```json
-{ "token": "eyJ...", "role": "empleado" }
+{ "role": "empleado", "id_usuario": 11, "nombre": "Ana", "tipo_empleado": "guia" }
 ```
 
 ---
@@ -251,11 +268,11 @@ npm run build    # Build de producción
 | POST   | `/tours`           | Empleado | Crear tour                               |
 | PUT    | `/tours/{id}`      | Empleado | Actualizar tour                          |
 | DELETE | `/tours/{id}`      | Empleado | Eliminar tour y sus reservas             |
-| GET    | `/reservas`        | JWT      | Lista todas las reservas                 |
-| GET    | `/reservas/{id}`   | JWT      | Detalle de una reserva                   |
-| POST   | `/reservas`        | JWT      | Crear reserva                            |
-| PUT    | `/reservas/{id}`   | JWT      | Actualizar reserva                       |
-| DELETE | `/reservas/{id}`   | JWT      | Eliminar reserva                         |
+| GET    | `/reservas`        | Sesion   | Lista todas las reservas                 |
+| GET    | `/reservas/{id}`   | Sesion   | Detalle de una reserva                   |
+| POST   | `/reservas`        | Sesion   | Crear reserva                            |
+| PUT    | `/reservas/{id}`   | Sesion   | Actualizar reserva                       |
+| DELETE | `/reservas/{id}`   | Sesion   | Eliminar reserva                         |
 
 **Body para POST `/tours`:**
 ```json
@@ -323,17 +340,17 @@ npm run build    # Build de producción
 
 ---
 
-### Endpoints personales (requieren JWT del usuario)
+### Endpoints personales (requieren sesion del usuario)
 
 | Método | Ruta                   | Auth | Descripción                                    |
 |--------|------------------------|------|------------------------------------------------|
-| GET    | `/me/reservas`         | JWT  | Reservas de tours del cliente autenticado      |
-| GET    | `/me/ventas`           | JWT  | Historial de compras del cliente autenticado   |
-| GET    | `/me/tipo-empleado`    | JWT  | Tipo de empleado del usuario autenticado       |
+| GET    | `/me/reservas`         | Sesion  | Reservas de tours del cliente autenticado      |
+| GET    | `/me/ventas`           | Sesion  | Historial de compras del cliente autenticado   |
+| GET    | `/me/tipo-empleado`    | Sesion  | Tipo de empleado del usuario autenticado       |
 
 ---
 
-### Reportes (requieren JWT de empleado)
+### Reportes (requieren sesion de empleado)
 
 | Método | Ruta                                  | Auth     | Descripción                                    |
 |--------|---------------------------------------|----------|------------------------------------------------|
@@ -380,7 +397,7 @@ magic-bag-gallery-api/
 │   │   │   ├── usuarioHandler.go
 │   │   │   └── ventaHandler.go
 │   │   ├── middleware/
-│   │   │   └── auth.go               # JWTMiddleware, RequireRole
+│   │   │   └── auth.go               # SessionMiddleware, RequireRole
 │   │   └── models/                   # Structs de datos
 │   ├── main.go
 │   ├── go.mod / go.sum
@@ -398,7 +415,7 @@ magic-bag-gallery-api/
 │   │   │   ├── PaintingCard/
 │   │   │   └── ProtectedRoute/       # requireEmpleado + requireCliente
 │   │   ├── context/
-│   │   │   └── AuthContext.jsx       # JWT + tipoEmpleado + nombre
+│   │   │   └── AuthContext.jsx       # sesion + tipoEmpleado + nombre
 │   │   ├── hooks/
 │   │   │   └── useCatalogFilters.js  # useReducer + useMemo
 │   │   ├── pages/
@@ -458,14 +475,14 @@ magic-bag-gallery-api/
 - **CTEs con RANK()** — rankings de artistas y colecciones
 - **Subqueries** — `EXISTS` e `IN` en reportes
 - **GROUP BY + HAVING** — reportes mensuales y técnicas populares
-- **Autenticación JWT** — roles `cliente` / `empleado` con middleware
+- **Autenticacion con sesion** — roles `cliente` / `empleado` con middleware
 - **CORS configurado** — permite peticiones desde el frontend
 
 ### Frontend
 - **useReducer** — estado del catálogo (filtros + búsqueda + datos)
 - **useMemo** — lista filtrada memoizada para evitar recálculos
 - **useCallback** — handlers estabilizados en Catalog, Navbar y MiCuenta
-- **React Context** — AuthContext con JWT, rol, nombre y tipoEmpleado
+- **React Context** — AuthContext con sesion, rol, nombre y tipoEmpleado
 - **React Router v6** — 9 rutas con ProtectedRoute por rol
 - **Formularios controlados** — validación real en Login (email + min 6 chars)
 - **ESLint** — configurado y sin errores (`npm run lint`)
