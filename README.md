@@ -131,6 +131,18 @@ SESSION_SECRET=your_super_secret_session_key_here_change_in_production
 | `reclutador`  | Artistas, Colecciones                     |
 | Sin tipo      | Todos: Pinturas, Artistas, Colecciones, Técnicas, Ventas, Tours, Reservas, Usuarios |
 
+### Documentación de Roles (5 roles DBMS)
+
+La aplicación implementa 5 roles de base de datos con `CREATE ROLE` y permisos granulares usando `GRANT` y `REVOKE`:
+
+| Rol | Tablas Accesibles | Operaciones Permitidas | Caso de Uso |
+|---|---|---|---|
+| **mbg_catalogo** | artista, coleccion, pintura, pintura_tecnica, tecnica, tour | SELECT | Acceso público al catálogo |
+| **mbg_cliente** | cliente_tour, venta, detalle_venta, envio, usuario, cliente | SELECT (propias), INSERT, UPDATE, DELETE | Clientes autenticados - reservas y compras |
+| **mbg_guia** | tour, cliente_tour, usuario, cliente, empleado | SELECT, INSERT, UPDATE, DELETE | Guías - gestión de tours y reservas |
+| **mbg_asesor** | venta, detalle_venta, envio, usuario, cliente, empleado (SELECT) | SELECT, INSERT, UPDATE (venta/envio) | Asesores - gestión de ventas y clientes |
+| **mbg_reclutador** | artista, coleccion, pintura, pintura_tecnica, tecnica, usuario (SELECT), empleado (SELECT) | SELECT, INSERT, UPDATE, DELETE | Reclutadores - gestión de artistas y catálogo |
+
 ---
 
 ## Comandos de desarrollo (frontend)

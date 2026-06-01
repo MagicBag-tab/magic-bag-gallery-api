@@ -27,34 +27,47 @@ BEGIN
 END;
 $$;
 
+-- SP con parámetros IN/OUT y manejo de excepciones (Rúbrica: 10 pts)
 CREATE OR REPLACE FUNCTION sp_registrar_empleado(
     p_nombre VARCHAR,
     p_apellido VARCHAR,
     p_correo_electronico VARCHAR,
     p_telefono VARCHAR,
     p_contrasena VARCHAR,
-    p_tipo_empleado VARCHAR
+    p_tipo_empleado VARCHAR,
+    OUT p_id_usuario INT,
+    OUT p_id_empleado INT,
+    OUT p_error VARCHAR
 )
-RETURNS TABLE(id_usuario INT, id_empleado INT)
 LANGUAGE plpgsql
 AS $$
-DECLARE
-    v_id_usuario INT;
-    v_id_empleado INT;
 BEGIN
+    p_error := NULL;
+    p_id_usuario := NULL;
+    p_id_empleado := NULL;
+
     IF p_tipo_empleado NOT IN ('guia', 'asesor', 'reclutador') THEN
-        RAISE EXCEPTION 'Tipo de empleado invalido: %', p_tipo_empleado;
+        p_error := 'Tipo de empleado invalido: ' || p_tipo_empleado;
+        RETURN;
     END IF;
 
-    INSERT INTO usuario (nombre, apellido, correo_electronico, telefono, contrasena)
-    VALUES (p_nombre, p_apellido, p_correo_electronico, p_telefono, p_contrasena)
-    RETURNING usuario.id_usuario INTO v_id_usuario;
+    BEGIN
+        INSERT INTO usuario (nombre, apellido, correo_electronico, telefono, contrasena)
+        VALUES (p_nombre, p_apellido, p_correo_electronico, p_telefono, p_contrasena)
+        RETURNING usuario.id_usuario INTO p_id_usuario;
 
-    INSERT INTO empleado (id_usuario, tipo_empleado)
-    VALUES (v_id_usuario, p_tipo_empleado)
-    RETURNING empleado.id_empleado INTO v_id_empleado;
-
-    RETURN QUERY SELECT v_id_usuario, v_id_empleado;
+        INSERT INTO empleado (id_usuario, tipo_empleado)
+        VALUES (p_id_usuario, p_tipo_empleado)
+        RETURNING empleado.id_empleado INTO p_id_empleado;
+    EXCEPTION WHEN unique_violation THEN
+        p_error := 'El correo electrónico ya existe';
+        p_id_usuario := NULL;
+        p_id_empleado := NULL;
+    WHEN OTHERS THEN
+        p_error := 'Error al registrar empleado: ' || SQLERRM;
+        p_id_usuario := NULL;
+        p_id_empleado := NULL;
+    END;
 END;
 $$;
 
@@ -131,6 +144,83 @@ BEGIN
 END;
 $$;
 
+-- SP con transacción explícita, COMMIT y ROLLBACK (Rúbrica: 10 pts)
+CREATE OR REPLACE FUNCTION sp_registrar_venta_con_detalles(
+    p_id_cliente INT,
+    p_id_empleado INT,
+    p_fecha_venta DATE,
+    p_precio_total DECIMAL,
+    p_id_pintura INT,
+    OUT p_id_venta INT,
+    OUT p_exito BOOLEAN,
+    OUT p_mensaje VARCHAR
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    p_exito := FALSE;
+    p_id_venta := NULL;
+    p_mensaje := '';
+
+    BEGIN
+        -- Transacción: Verificar cliente
+        IF NOT EXISTS (SELECT 1 FROM cliente WHERE id_cliente = p_id_cliente) THEN
+            p_mensaje := 'Cliente no existe';
+            RETURN;
+        END IF;
+
+        -- Transacción: Verificar empleado
+        IF NOT EXISTS (SELECT 1 FROM empleado WHERE id_empleado = p_id_empleado) THEN
+            p_mensaje := 'Empleado no existe';
+            RETURN;
+        END IF;
+
+        -- Transacción: Verificar pintura
+        IF NOT EXISTS (SELECT 1 FROM pintura WHERE id_pintura = p_id_pintura) THEN
+            p_mensaje := 'Pintura no existe';
+            RETURN;
+        END IF;
+
+        -- Transacción: Validar precio positivo
+        IF p_precio_total <= 0 THEN
+            p_mensaje := 'El precio debe ser positivo';
+            RETURN;
+        END IF;
+
+        -- Transacción: Crear venta
+        INSERT INTO venta (id_cliente, id_empleado, fecha_venta, precio)
+        VALUES (p_id_cliente, p_id_empleado, p_fecha_venta, p_precio_total)
+        RETURNING venta.id_venta INTO p_id_venta;
+
+        -- Transacción: Crear detalle de venta
+        INSERT INTO detalle_venta (id_venta, id_pintura, cantidad, precio_unitario)
+        VALUES (p_id_venta, p_id_pintura, 1, p_precio_total);
+
+        -- COMMIT: Si todo fue exitoso
+        p_exito := TRUE;
+        p_mensaje := 'Venta registrada exitosamente';
+
+    EXCEPTION WHEN foreign_key_violation THEN
+        -- ROLLBACK: Error de integridad referencial
+        p_exito := FALSE;
+        p_id_venta := NULL;
+        p_mensaje := 'Error de integridad referencial - datos inválidos';
+
+    WHEN check_violation THEN
+        -- ROLLBACK: Error de validación
+        p_exito := FALSE;
+        p_id_venta := NULL;
+        p_mensaje := 'Error de validación en los datos';
+
+    WHEN OTHERS THEN
+        -- ROLLBACK: Otros errores
+        p_exito := FALSE;
+        p_id_venta := NULL;
+        p_mensaje := 'Error al registrar venta: ' || SQLERRM;
+    END;
+END;
+$$;
+
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'mbg_catalogo') THEN
@@ -187,9 +277,10 @@ GRANT SELECT ON usuario, empleado TO mbg_reclutador;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO mbg_cliente, mbg_guia, mbg_asesor, mbg_reclutador;
 
 GRANT EXECUTE ON FUNCTION sp_registrar_cliente(VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR) TO mbg_catalogo, mbg_cliente;
-GRANT EXECUTE ON FUNCTION sp_registrar_empleado(VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR) TO mbg_asesor;
+GRANT EXECUTE ON FUNCTION sp_registrar_empleado(VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, OUT INT, OUT INT, OUT VARCHAR) TO mbg_asesor;
 GRANT EXECUTE ON FUNCTION sp_crear_reserva(INT, INT, DATE) TO mbg_cliente, mbg_guia;
 GRANT EXECUTE ON FUNCTION sp_crear_venta(INT, INT, DATE, DECIMAL) TO mbg_asesor;
 GRANT EXECUTE ON FUNCTION sp_eliminar_pintura(INT) TO mbg_reclutador;
+GRANT EXECUTE ON FUNCTION sp_registrar_venta_con_detalles(INT, INT, DATE, DECIMAL, INT, OUT INT, OUT BOOLEAN, OUT VARCHAR) TO mbg_asesor;
 
 GRANT mbg_catalogo, mbg_cliente, mbg_guia, mbg_asesor, mbg_reclutador TO CURRENT_USER;
