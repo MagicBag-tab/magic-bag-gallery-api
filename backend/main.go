@@ -47,6 +47,9 @@ func loadDatabase() {
 
 func loadEnv() error {
 	if err := godotenv.Load(); err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
 		return fmt.Errorf("error al cargar variables de entorno: %v", err)
 	}
 	return nil

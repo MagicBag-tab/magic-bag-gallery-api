@@ -80,6 +80,8 @@ JWT_SECRET=your_super_secret_jwt_key_here_change_in_production
 SESSION_SECRET=your_super_secret_session_key_here_change_in_production
 ```
 
+> En despliegues como Railway no es necesario subir el archivo `.env`. El backend usa las variables de entorno del entorno de ejecución cuando `.env` no existe.
+
 ---
 
 ## Credenciales de usuarios de prueba
